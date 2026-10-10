@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ImagePlus, Plus, Save, Trash2, ArrowUp, ArrowDown, Sparkles, Settings2 } from "lucide-react";
+import { ImagePlus, Plus, Save, Trash2, ArrowUp, ArrowDown} from "lucide-react";
 import { 
   fetchStorefront, 
   updateStorefront, 

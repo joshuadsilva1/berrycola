@@ -16,6 +16,7 @@ import skullDiceCharm from "../assets/charm-skull-dice.png";
 import fairyCharm from "../assets/fairy.png";
 import batmanCharm from "../assets/batman.png";
 import marlboroCharm from "../assets/marlboro.png";
+import type { Category } from "../data/products";
 
 const heroCharms = [
   { image: fairyCharm, style: "top-[8%] left-[6%]", size: 250, float: 4.5, tilt: -7 },
@@ -123,7 +124,7 @@ export default function Home() {
                         {coverImage ? (
                           <img src={coverImage} alt={cat} className="w-32 h-32 object-cover rounded-full shadow-md" />
                         ) : (
-                          <CategoryShape category={cat} size={128} />
+                    <CategoryShape category={cat as Category} size={128} />
                         )}
                       </motion.div>
                       <h3 className="font-display text-lg text-espresso">{cat}</h3>
