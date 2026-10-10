@@ -331,4 +331,51 @@ export interface AdminMessages {
 
 export function fetchMessages() {
   return authRequest<AdminMessages>("/admin/messages");
+
+
+
+
+}
+
+
+// --- STOREFRONT TYPES & API ---
+export interface Slide {
+  imageUrl: string;
+  title: string;
+  link: string;
+}
+
+export interface StorefrontSettings {
+  splashEnabled: boolean;
+  sliderSlides: Slide[];
+  trendingCategories: string[];
+  categoryImages: Record<string, string>;
+}
+
+// Public: Anyone can read the storefront settings (for the homepage)
+export function fetchStorefront() {
+  return request<StorefrontSettings>("/storefront");
+}
+
+// Admin: Only admins can save storefront settings
+export function updateStorefront(payload: StorefrontSettings) {
+  return authRequest<StorefrontSettings>("/admin/storefront", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+
+export interface Slide {
+  imageUrl: string;
+  title: string;
+  link: string;
+}
+
+export interface StorefrontSettings {
+  sliderSlides: Slide[];
+  trendingMode: "auto" | "manual";
+  trendingCategories: string[];
+  categoryImages: Record<string, string>;
+  customCategories: string[]; // Stores categories created directly in the admin
 }

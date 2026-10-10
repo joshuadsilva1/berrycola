@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowDown, ArrowUp, ImagePlus, Images, Trash2, ZoomIn } from "lucide-react";
+import { ArrowDown, ArrowUp, ImagePlus, Images, Trash2, ZoomIn, Type } from "lucide-react";
 import ProductImage from "../ProductImage";
 import CropPicker, { clampCrop } from "./CropPicker";
 import { uploadImage } from "../../lib/api";
@@ -11,7 +11,7 @@ export interface PhotoEntry {
   key: string;
   id?: string;
   label: string;
-  source: "upload" | "zoom";
+  source: "upload" | "zoom" | "text";
   imageUrl: string;
   crop: Crop;
   // Options only.
@@ -112,6 +112,9 @@ export default function PhotosEditor({
   };
 
   const addZoom = () => onEntries((list) => [...list, newEntry({ source: "zoom" })]);
+  
+  // Add an empty text option
+  const addTextOption = () => onEntries((list) => [...list, newEntry({ source: "text" })]);
 
   const isOptions = mode === "options";
   const noun = isOptions ? "option" : "photo";
@@ -165,12 +168,12 @@ export default function PhotosEditor({
 
       {/* What the extra photos mean */}
       <div className="flex flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-espresso/60">Carousel photos</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-espresso/60">Carousel photos / Options</p>
         <div className="grid sm:grid-cols-2 gap-2">
           {(
             [
               ["gallery", "Just photos", "Extra named views of the same product."],
-              ["options", "Customer picks one", "Each named photo is an option they choose and buy."],
+              ["options", "Customer picks one", "Each named photo or text block is an option they choose and buy."],
             ] as const
           ).map(([value, title, hint]) => (
             <button
@@ -195,21 +198,24 @@ export default function PhotosEditor({
             ? mainUrl
               ? { url: mainUrl, crop: entry.crop }
               : null
-            : entry.imageUrl
+            : entry.imageUrl && entry.source === "upload"
               ? { url: entry.imageUrl, crop: null }
               : null;
+              
         return (
           <div key={entry.key} className="border border-espresso/10 rounded-2xl p-4 flex flex-col gap-3">
             <div className="flex items-center gap-3">
               <span className="w-12 h-12 rounded-xl overflow-hidden bg-espresso/5 shrink-0 flex items-center justify-center">
-                {preview ? (
+                {entry.source === "text" ? (
+                  <Type size={18} className="text-espresso/30" />
+                ) : preview ? (
                   <ProductImage url={preview.url} crop={preview.crop} alt="" />
                 ) : (
                   <Images size={18} className="text-espresso/30" />
                 )}
               </span>
               <input
-                placeholder={`Name this ${noun} — customers see it on the photo`}
+                placeholder={`Name this ${noun} — customers see it as the option label`}
                 value={entry.label}
                 onChange={(e) => update(entry.key, { label: e.target.value })}
                 className={inputClass}
@@ -249,14 +255,19 @@ export default function PhotosEditor({
                 [
                   ["upload", "Separate photo"],
                   ["zoom", "Zoom into main photo"],
+                  ["text", "Text only"],
                 ] as const
               ).map(([value, title]) => (
                 <button
                   key={value}
                   type="button"
-                  onClick={() =>
-                    update(entry.key, value === "zoom" ? { source: value, crop: clampCrop(entry.crop) } : { source: value })
-                  }
+                  onClick={() => {
+                    if (value === "zoom") {
+                      update(entry.key, { source: value, crop: clampCrop(entry.crop) });
+                    } else {
+                      update(entry.key, { source: value });
+                    }
+                  }}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${
                     entry.source === value ? "bg-cream text-espresso shadow-sm" : "text-espresso/55 hover:text-espresso"
                   }`}
@@ -266,7 +277,9 @@ export default function PhotosEditor({
               ))}
             </div>
 
-            {entry.source === "upload" ? (
+            {entry.source === "text" ? (
+              <p className="text-xs text-espresso/55">No image required. Displayed as a text label/button.</p>
+            ) : entry.source === "upload" ? (
               <label className="self-start flex items-center gap-2 text-sm font-semibold text-cola-red cursor-pointer hover:underline">
                 <ImagePlus size={15} />
                 {uploading ? "Uploading…" : entry.imageUrl ? "Replace photo" : "Upload photo"}
@@ -288,7 +301,7 @@ export default function PhotosEditor({
             )}
 
             {isOptions && (
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4 mt-2">
                 <label className="flex items-center gap-2 text-xs text-espresso/70">
                   Price (₹)
                   <input
@@ -337,6 +350,13 @@ export default function PhotosEditor({
           className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-espresso/15 text-sm font-semibold text-espresso hover:border-espresso/40 disabled:opacity-40"
         >
           <ZoomIn size={15} /> Add zoomed view
+        </button>
+        <button
+          type="button"
+          onClick={addTextOption}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-espresso/15 text-sm font-semibold text-espresso hover:border-espresso/40"
+        >
+          <Type size={15} /> Add text option
         </button>
       </div>
     </div>

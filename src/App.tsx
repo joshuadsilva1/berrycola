@@ -24,6 +24,8 @@ import AdminProducts from "./pages/admin/AdminProducts";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminMessages from "./pages/admin/AdminMessages";
+import AdminStorefront from "./pages/admin/AdminStorefront"; 
+
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -88,6 +90,14 @@ export default function App() {
               }
             />
             <Route path="/admin" element={<Navigate to="/admin/analytics" replace />} />
+            <Route
+              path="/admin/storefront"
+              element={
+                <RequireAdmin>
+                  <AdminStorefront />
+                </RequireAdmin>
+              }
+            />
             <Route
               path="/admin/analytics"
               element={
