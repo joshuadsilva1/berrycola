@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Navigate } from "react-router-dom"; // <-- Added Navigate here
 import { motion } from "framer-motion";
 import { Phone } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -40,22 +40,26 @@ function phoneErrorMessage(err: unknown, fallback: string) {
 }
 
 export default function Login() {
-  const { firebaseReady, firebaseUser, signInWithGoogle, startPhoneSignIn, confirmPhoneCode } =
+  // Added "user" to the useAuth destructuring so we can check if they are an admin
+  const { firebaseReady, firebaseUser, user, signInWithGoogle, startPhoneSignIn, confirmPhoneCode } =
     useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = (location.state as { from?: string } | null)?.from ?? "/account";
-
+  
+  // Make the default route smart based on admin status
+  const defaultRedirect = user?.isAdmin ? "/admin" : "/account";
+  const redirectTo = (location.state as { from?: string } | null)?.from ?? defaultRedirect;
   const [mode, setMode] = useState<"choose" | "phone" | "otp">("choose");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // --- THE FIX IS HERE ---
+  // If the user is already logged in, safely redirect them using the Navigate component
   if (firebaseUser) {
-    navigate(redirectTo, { replace: true });
-    return null;
+    return <Navigate to={redirectTo} replace />;
   }
+  // -----------------------
 
   const handleGoogle = async () => {
     setError(null);

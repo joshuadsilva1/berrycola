@@ -6,7 +6,8 @@ const TABS = [
   { label: "Products", to: "/admin/products" },
   { label: "Customers", to: "/admin/customers" },
   { label: "Messages", to: "/admin/messages" },
-  { label: "Storefront", to: "/admin/storefront" }, // NEW: For homepage layout & categories
+  { label: "Storefront", to: "/admin/storefront" }, 
+  {label: "Promos", to: "/admin/promos"}
 ];
 
 export default function AdminNav() {

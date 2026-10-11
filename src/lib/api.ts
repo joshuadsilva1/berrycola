@@ -379,3 +379,46 @@ export interface StorefrontSettings {
   categoryImages: Record<string, string>;
   customCategories: string[]; // Stores categories created directly in the admin
 }
+
+
+// --- PROMO CODES ---
+export interface PromoCode {
+  id: number;
+  code: string;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
+  minOrderValue: number | null;
+  isActive: boolean;
+  expiresAt: string | null;
+  usageCount: number;
+  createdAt: string;
+}
+
+export function fetchAdminPromos() {
+  return authRequest<PromoCode[]>("/admin/promos");
+}
+
+export function createPromo(payload: Partial<PromoCode>) {
+  return authRequest<PromoCode>("/admin/promos", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updatePromo(id: number, payload: Partial<PromoCode>) {
+  return authRequest<PromoCode>(`/admin/promos/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deletePromo(id: number) {
+  return authRequest<void>(`/admin/promos/${id}`, { method: "DELETE" });
+}
+
+export function validatePromo(code: string, subtotal: number) {
+  return request<{code: string, discountAmount: number}>("/promos/validate", {
+    method: "POST",
+    body: JSON.stringify({ code, subtotal })
+  });
+}

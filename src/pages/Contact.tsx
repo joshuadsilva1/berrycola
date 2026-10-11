@@ -44,7 +44,7 @@ export default function Contact() {
               </div>
               <div>
                 <h3 className="font-display text-espresso">Email</h3>
-                <p className="text-espresso/60 text-sm mt-1">hello@berrycola.shop</p>
+                <p className="text-espresso/60 text-sm mt-1">berrycolastore@gmail.com</p>
               </div>
             </div>
             <div className="flex gap-4">
@@ -62,7 +62,7 @@ export default function Contact() {
               </div>
               <div>
                 <h3 className="font-display text-espresso">Instagram</h3>
-                <p className="text-espresso/60 text-sm mt-1">@berrycola.shop</p>
+                <p className="text-espresso/60 text-sm mt-1">@berrycolastore</p>
               </div>
             </div>
           </Reveal>

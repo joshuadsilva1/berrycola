@@ -12,6 +12,9 @@ import { OrderUpdatesProvider } from "./context/OrderUpdatesContext";
 import OrderUpdateBanner from "./components/OrderUpdateBanner";
 import { RequireAdmin, RequireAuth } from "./components/ProtectedRoute";
 import { track } from "./lib/analytics";
+import { fetchStorefront } from "./lib/api";
+import WhatsAppButton from "./components/WhatsAppButton";
+
 import Home from "./pages/Home";
 import Shop from "./pages/Shop";
 import Product from "./pages/Product";
@@ -24,8 +27,8 @@ import AdminProducts from "./pages/admin/AdminProducts";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminMessages from "./pages/admin/AdminMessages";
-import AdminStorefront from "./pages/admin/AdminStorefront"; 
-
+import AdminStorefront from "./pages/admin/AdminStorefront";
+import AdminPromos from "./pages/admin/AdminPromos";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -46,6 +49,19 @@ function PageViewTracker() {
 export default function App() {
   const [showIntro, setShowIntro] = useState(() => !sessionStorage.getItem("bc-intro-seen"));
 
+  useEffect(() => {
+    if (!showIntro) return;
+
+    fetchStorefront()
+      .then((data) => {
+        if (data.splashEnabled === false) {
+          setShowIntro(false);
+          sessionStorage.setItem("bc-intro-seen", "1");
+        }
+      })
+      .catch((err) => console.error("Failed to load storefront config:", err));
+  }, [showIntro]);
+
   const finishIntro = () => {
     sessionStorage.setItem("bc-intro-seen", "1");
     setShowIntro(false);
@@ -54,86 +70,44 @@ export default function App() {
   return (
     <AuthProvider>
       <OrderUpdatesProvider>
-      <CartProvider>
-        <CategoryShapeDefs />
-        <AnimatePresence>
-          {showIntro && <IntroSplash onFinish={finishIntro} />}
-        </AnimatePresence>
+        <CartProvider>
+          <CategoryShapeDefs />
+          <AnimatePresence>
+            {showIntro && <IntroSplash onFinish={finishIntro} />}
+          </AnimatePresence>
 
-        <ScrollToTop />
-        <PageViewTracker />
-        <Navbar />
-        <OrderUpdateBanner />
-        <CartDrawer />
-        <main>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/product/:id" element={<Product />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/account"
-              element={
-                <RequireAuth>
-                  <Account />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/admin/orders"
-              element={
-                <RequireAdmin>
-                  <AdminOrders />
-                </RequireAdmin>
-              }
-            />
-            <Route path="/admin" element={<Navigate to="/admin/analytics" replace />} />
-            <Route
-              path="/admin/storefront"
-              element={
-                <RequireAdmin>
-                  <AdminStorefront />
-                </RequireAdmin>
-              }
-            />
-            <Route
-              path="/admin/analytics"
-              element={
-                <RequireAdmin>
-                  <AdminAnalytics />
-                </RequireAdmin>
-              }
-            />
-            <Route
-              path="/admin/customers"
-              element={
-                <RequireAdmin>
-                  <AdminCustomers />
-                </RequireAdmin>
-              }
-            />
-            <Route
-              path="/admin/messages"
-              element={
-                <RequireAdmin>
-                  <AdminMessages />
-                </RequireAdmin>
-              }
-            />
-            <Route
-              path="/admin/products"
-              element={
-                <RequireAdmin>
-                  <AdminProducts />
-                </RequireAdmin>
-              }
-            />
-          </Routes>
-        </main>
-        <Footer />
-      </CartProvider>
+          <ScrollToTop />
+          <PageViewTracker />
+          
+          <Navbar />
+          <OrderUpdateBanner />
+          <CartDrawer />
+          
+          <main>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/shop" element={<Shop />} />
+              <Route path="/product/:id" element={<Product />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/login" element={<Login />} />
+              
+              <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
+              
+              <Route path="/admin" element={<Navigate to="/admin/analytics" replace />} />
+              <Route path="/admin/orders" element={<RequireAdmin><AdminOrders /></RequireAdmin>} />
+              <Route path="/admin/analytics" element={<RequireAdmin><AdminAnalytics /></RequireAdmin>} />
+              <Route path="/admin/customers" element={<RequireAdmin><AdminCustomers /></RequireAdmin>} />
+              <Route path="/admin/messages" element={<RequireAdmin><AdminMessages /></RequireAdmin>} />
+              <Route path="/admin/products" element={<RequireAdmin><AdminProducts /></RequireAdmin>} />
+              <Route path="/admin/storefront" element={<RequireAdmin><AdminStorefront /></RequireAdmin>} />
+              <Route path="/admin/promos" element={<RequireAdmin><AdminPromos /></RequireAdmin>} />
+            </Routes>
+          </main>
+          
+          <WhatsAppButton />
+          <Footer />
+        </CartProvider>
       </OrderUpdatesProvider>
     </AuthProvider>
   );

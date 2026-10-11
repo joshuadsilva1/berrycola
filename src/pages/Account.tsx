@@ -1,143 +1,842 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { PackageSearch } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { LogOut, Edit2, Check, X, UploadCloud, User } from "lucide-react";
+import { updateProfile, updateEmail } from "firebase/auth";
 import { useAuth } from "../context/AuthContext";
-import { fetchMyOrders, type Order } from "../lib/api";
-import { STATUS_LABELS } from "../lib/orderStatus";
-import OrderStatusTracker from "../components/OrderStatusTracker";
-import OrderTimeline from "../components/OrderTimeline";
-import { useOrderUpdates } from "../context/OrderUpdatesContext";
+
+const PAPER_TEXTURE = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E")`;
+
+const RANK_OPTIONS = [
+  "Newbie Collector",
+  "Charm Addict",
+  "Bag Styler",
+  "VIP Stacker",
+  "Chief Jingle Officer",
+  "Founder",
+];
+
+// Center chain holding the heavy ID card
+const NUM_MAIN_LINKS = 6;
+const MAIN_LINK_LEN = 14;
+
+// Side mini-chains holding the Heart (left) and Star (right) charms
+const NUM_SIDE_LINKS = 4;
+const SIDE_LINK_LEN = 11;
 
 export default function Account() {
-  const { profile, signOutUser } = useAuth();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { markSeen } = useOrderUpdates();
+  const { firebaseUser, profile, logOut } = useAuth();
+  const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Edit State
+  const [isEditing, setIsEditing] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPhoto, setNewPhoto] = useState("");
+  const [statusRank, setStatusRank] = useState("Charm Addict");
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // DOM Refs for 60fps autonomous articulation
+  const mainLinkRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const leftLinkRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const rightLinkRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const heartCharmRef = useRef<HTMLDivElement>(null);
+  const starCharmRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // --- AUTONOMOUS MULTI-CHAIN SWAY ENGINE ---
+  useEffect(() => {
+    let rafId: number;
+    const startTime = performance.now();
+
+    // All three chains hook onto the bottom of the central Split O-Ring (y = 76px)
+    const RING_BOTTOM_Y = 76;
+
+    const animateSway = (now: number) => {
+      const t = (now - startTime) * 0.0015;
+
+      // 1. CENTER MAIN CHAIN + ID BADGE
+      let mainX = 0;
+      let mainY = RING_BOTTOM_Y + 4;
+
+      for (let i = 0; i < NUM_MAIN_LINKS; i++) {
+        const wave = Math.sin(t - i * 0.14) * 0.042 + Math.cos(t * 0.65 - i * 0.08) * 0.015;
+        const theta = wave * (1 + i * 0.08);
+
+        const nextX = mainX + Math.sin(theta) * MAIN_LINK_LEN;
+        const nextY = mainY + Math.cos(theta) * MAIN_LINK_LEN;
+
+        const el = mainLinkRefs.current[i];
+        if (el) {
+          const midX = (mainX + nextX) / 2;
+          const midY = (mainY + nextY) / 2;
+          const deg = -theta * (180 / Math.PI);
+          el.style.transform = `translate3d(${midX}px, ${midY}px, 0) translate(-50%, -50%) rotate(${deg}deg)`;
+        }
+
+        mainX = nextX;
+        mainY = nextY;
+      }
+
+      const cardTheta = Math.sin(t - NUM_MAIN_LINKS * 0.14 - 0.2) * 0.04 + Math.cos(t * 0.65) * 0.012;
+      if (cardRef.current) {
+        const cardDeg = -cardTheta * (180 / Math.PI);
+        cardRef.current.style.transform = `translate3d(${mainX}px, ${mainY}px, 0) translate(-50%, 0) rotate(${cardDeg}deg)`;
+      }
+
+      // 2. LEFT SUB-CHAIN + PUFFY HEART CHARM
+      // Starts slightly left on the O-ring (-7px) and drapes outward at ~ -32 degrees
+      let leftX = -7;
+      let leftY = RING_BOTTOM_Y - 2;
+
+      for (let i = 0; i < NUM_SIDE_LINKS; i++) {
+        // Natural outward splay that curves downward toward the end due to heart weight
+        const baseAngle = -0.58 + i * 0.075;
+        const sway = Math.sin(t * 1.25 - i * 0.22 + 0.6) * 0.065;
+        const theta = baseAngle + sway;
+
+        const nextX = leftX + Math.sin(theta) * SIDE_LINK_LEN;
+        const nextY = leftY + Math.cos(theta) * SIDE_LINK_LEN;
+
+        const el = leftLinkRefs.current[i];
+        if (el) {
+          const midX = (leftX + nextX) / 2;
+          const midY = (leftY + nextY) / 2;
+          const deg = -theta * (180 / Math.PI);
+          el.style.transform = `translate3d(${midX}px, ${midY}px, 0) translate(-50%, -50%) rotate(${deg}deg)`;
+        }
+
+        leftX = nextX;
+        leftY = nextY;
+      }
+
+      if (heartCharmRef.current) {
+        const heartDeg = 12 + Math.sin(t * 1.25 - 0.8) * 6;
+        heartCharmRef.current.style.transform = `translate3d(${leftX}px, ${leftY}px, 0) translate(-50%, -6px) rotate(${heartDeg}deg)`;
+      }
+
+      // 3. RIGHT SUB-CHAIN + STAR CHARM
+      // Starts slightly right on the O-ring (+7px) and drapes outward at ~ +34 degrees
+      let rightX = 7;
+      let rightY = RING_BOTTOM_Y - 2;
+
+      for (let i = 0; i < NUM_SIDE_LINKS; i++) {
+        const baseAngle = 0.60 - i * 0.075;
+        const sway = Math.sin(t * 1.18 - i * 0.22 + 1.9) * 0.065;
+        const theta = baseAngle + sway;
+
+        const nextX = rightX + Math.sin(theta) * SIDE_LINK_LEN;
+        const nextY = rightY + Math.cos(theta) * SIDE_LINK_LEN;
+
+        const el = rightLinkRefs.current[i];
+        if (el) {
+          const midX = (rightX + nextX) / 2;
+          const midY = (rightY + nextY) / 2;
+          const deg = -theta * (180 / Math.PI);
+          el.style.transform = `translate3d(${midX}px, ${midY}px, 0) translate(-50%, -50%) rotate(${deg}deg)`;
+        }
+
+        rightX = nextX;
+        rightY = nextY;
+      }
+
+      if (starCharmRef.current) {
+        const starDeg = -14 + Math.sin(t * 1.18 - 0.5) * 6.5;
+        starCharmRef.current.style.transform = `translate3d(${rightX}px, ${rightY}px, 0) translate(-50%, -6px) rotate(${starDeg}deg)`;
+      }
+
+      rafId = requestAnimationFrame(animateSway);
+    };
+
+    rafId = requestAnimationFrame(animateSway);
+    return () => cancelAnimationFrame(rafId);
+  }, []);
 
   useEffect(() => {
-    fetchMyOrders()
-      .then((data) => {
-        setOrders(data);
-        // They're looking at them now, so clear the site-wide alert.
-        markSeen();
-      })
-      .catch(() => setError("Couldn't load your orders."))
-      .finally(() => setLoading(false));
-  }, [markSeen]);
+    if (firebaseUser) {
+      setNewName(firebaseUser.displayName || "");
+      setNewEmail(firebaseUser.email || "");
+      setNewPhoto(firebaseUser.photoURL || "");
+
+      const savedRank = localStorage.getItem(`bc-rank-${firebaseUser.uid}`);
+      if (savedRank) {
+        setStatusRank(savedRank);
+      } else if (profile?.isAdmin) {
+        setStatusRank("Founder");
+      }
+    }
+  }, [firebaseUser, profile, isEditing]);
+
+  const handleLogOut = async () => {
+    setIsLoggingOut(true);
+    await logOut();
+    navigate("/");
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_SIZE = 150;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+        setNewPhoto(dataUrl);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!firebaseUser) return;
+    setIsSaving(true);
+    setErrorMsg("");
+
+    try {
+      localStorage.setItem(`bc-rank-${firebaseUser.uid}`, statusRank);
+
+      if (newName !== firebaseUser.displayName || newPhoto !== firebaseUser.photoURL) {
+        await updateProfile(firebaseUser, {
+          displayName: newName.trim(),
+          photoURL: newPhoto,
+        });
+      }
+
+      if (newEmail.trim() && newEmail !== firebaseUser.email) {
+        await updateEmail(firebaseUser, newEmail.trim());
+      }
+
+      setIsEditing(false);
+    } catch (error: any) {
+      console.error("Failed to update profile:", error);
+      if (error.code === "auth/requires-recent-login") {
+        setErrorMsg("Please sign out and sign back in to change your email.");
+      } else {
+        setErrorMsg("Failed to save. Please try again.");
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const serialNumber = firebaseUser?.uid ? firebaseUser.uid.substring(0, 8).toUpperCase() : "000-000";
 
   return (
-    <div className="min-h-screen px-5 sm:px-8 pt-28 pb-20 max-w-4xl mx-auto">
-      <div className="flex items-start justify-between gap-4 mb-10">
-        <div>
-          <h1 className="font-display text-3xl text-espresso mb-1">
-            Hi{profile?.name ? `, ${profile.name.split(" ")[0]}` : ""}
-          </h1>
-          <p className="text-sm text-espresso/60">
-            {profile?.email ?? profile?.phone ?? "Your account"}
-          </p>
-          {profile?.isAdmin && (
-            <Link to="/admin/analytics" className="text-sm text-cola-red font-semibold hover:underline mt-2 inline-block">
-              Go to admin dashboard →
-            </Link>
-          )}
-        </div>
-        <button
-          onClick={signOutUser}
-          className="text-sm text-espresso/50 hover:text-cola-red shrink-0"
-        >
-          Sign out
-        </button>
-      </div>
+    <div className="min-h-screen bg-cream pt-20 pb-24 px-5 flex flex-col items-center overflow-hidden select-none">
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600&display=swap');
+          .font-handwritten { font-family: 'Caveat', cursive; }
+        `}
+      </style>
 
-      <h2 className="font-display text-xl text-espresso mb-4">Your orders</h2>
+      {/* SHARED HIGH-GLOSS CHROME SVG GRADIENTS & LIGHTING */}
+      <svg width="0" height="0" className="absolute pointer-events-none">
+        <defs>
+          {/* Polished Flat Metal Clip Surface */}
+          <linearGradient id="clip-surface" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="15%" stopColor="#e4e7ec" />
+            <stop offset="50%" stopColor="#b8bdc6" />
+            <stop offset="78%" stopColor="#6c717a" />
+            <stop offset="92%" stopColor="#26282c" />
+            <stop offset="100%" stopColor="#d0d4dc" />
+          </linearGradient>
 
-      {loading && <p className="text-espresso/50 text-sm">Loading…</p>}
-      {error && <p className="text-cola-red text-sm">{error}</p>}
+          {/* High-Contrast 3D Chrome Torus Ring */}
+          <linearGradient id="chrome-body" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="18%" stopColor="#d4d7dc" />
+            <stop offset="42%" stopColor="#484c54" />
+            <stop offset="55%" stopColor="#f8f9fa" />
+            <stop offset="78%" stopColor="#858a94" />
+            <stop offset="100%" stopColor="#1e2024" />
+          </linearGradient>
 
-      {!loading && !error && orders.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-espresso/50 text-center">
-          <PackageSearch size={36} strokeWidth={1.2} />
-          <p>No orders yet.</p>
-          <Link to="/shop" className="text-sm font-semibold text-cola-red hover:underline">
-            Start shopping
-          </Link>
+          {/* Horizontal Cylinder Chrome for side-facing links */}
+          <linearGradient id="chrome-cylinder" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#2c2f36" />
+            <stop offset="28%" stopColor="#ffffff" />
+            <stop offset="55%" stopColor="#b0b5bd" />
+            <stop offset="82%" stopColor="#3b3f46" />
+            <stop offset="100%" stopColor="#9ca1a9" />
+          </linearGradient>
+
+          {/* Puffy 3D Radial Chrome for the Heart Charm */}
+          <radialGradient id="puffy-chrome-heart" cx="34%" cy="32%" r="68%" fx="28%" fy="26%">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="22%" stopColor="#f3f4f6" />
+            <stop offset="48%" stopColor="#b4b9c2" />
+            <stop offset="74%" stopColor="#4e525b" />
+            <stop offset="90%" stopColor="#1f2126" />
+            <stop offset="100%" stopColor="#9ea4b0" />
+          </radialGradient>
+
+          {/* Beveled Metallic Surface for the Star Charm */}
+          <linearGradient id="star-chrome" x1="15%" y1="10%" x2="85%" y2="90%">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="35%" stopColor="#e5e7eb" />
+            <stop offset="65%" stopColor="#9ba1ab" />
+            <stop offset="88%" stopColor="#3f434a" />
+            <stop offset="100%" stopColor="#1f2124" />
+          </linearGradient>
+
+          {/* Rim Specular Highlight */}
+          <linearGradient id="chrome-specular" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+            <stop offset="50%" stopColor="#ffffff" stopOpacity="0.1" />
+            <stop offset="100%" stopColor="#000000" stopOpacity="0.55" />
+          </linearGradient>
+
+          <filter id="metal-drop-shadow" x="-35%" y="-35%" width="170%" height="170%">
+            <feDropShadow dx="0" dy="3" stdDeviation="2.2" floodColor="#1a110e" floodOpacity="0.34" />
+          </filter>
+        </defs>
+      </svg>
+
+      {errorMsg && (
+        <div className="mb-4 bg-cola-red/10 border border-cola-red text-cola-red px-4 py-2 rounded-xl text-sm max-w-sm text-center z-50">
+          {errorMsg}
         </div>
       )}
 
-      <div className="flex flex-col gap-6">
-        {orders.map((order) => (
+      {/* Stage Container */}
+      <div className="relative w-full max-w-[360px] h-[680px]">
+        {/* 1. TOP RECTANGULAR SILVER CLIP & SPLIT O-RING (From your reference image) */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+          <svg width="90" height="92" viewBox="0 0 90 92" className="overflow-visible">
+            <g filter="url(#metal-drop-shadow)">
+              {/* Large Split O-Ring hanging under the clip */}
+              <circle
+                cx="45"
+                cy="62"
+                r="16"
+                fill="none"
+                stroke="url(#chrome-body)"
+                strokeWidth="4.8"
+              />
+              <circle
+                cx="45"
+                cy="62"
+                r="16"
+                fill="none"
+                stroke="url(#chrome-specular)"
+                strokeWidth="1.2"
+              />
+
+              {/* Side hinge pins on the alligator clip */}
+              <rect x="25" y="18" width="4" height="12" rx="2" fill="url(#chrome-cylinder)" />
+              <rect x="61" y="18" width="4" height="12" rx="2" fill="url(#chrome-cylinder)" />
+
+              {/* Main Rectangular Silver Clip Body */}
+              <rect
+                x="28"
+                y="2"
+                width="34"
+                height="48"
+                rx="4"
+                fill="url(#clip-surface)"
+                stroke="#2b2e33"
+                strokeWidth="0.8"
+              />
+              {/* Top & Left glossy bevel highlight inside clip */}
+              <path
+                d="M 31 46 L 31 5 L 59 5"
+                fill="none"
+                stroke="#ffffff"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                 strokeLinejoin="round"
+                opacity="0.9"
+              />
+              {/* Bottom dark rolled metal lip of the clip */}
+              <rect x="29" y="42" width="32" height="6" rx="2" fill="#202226" />
+              <line x1="31" y1="43.5" x2="59" y2="43.5" stroke="#ffffff" strokeWidth="1" opacity="0.65" />
+
+              {/* Center vertical bail hooking into the top of the main chain */}
+              <rect
+                x="41.5"
+                y="67"
+                width="7"
+                height="20"
+                rx="3.5"
+                fill="url(#chrome-cylinder)"
+                stroke="#25282c"
+                strokeWidth="0.6"
+              />
+              <line x1="43.8" y1="69" x2="43.8" y2="85" stroke="#ffffff" strokeWidth="1.4" strokeLinecap="round" />
+            </g>
+          </svg>
+        </div>
+
+        {/* 2. LEFT SUB-CHAIN LINKS (Leading to Puffy Heart Charm) */}
+        {Array.from({ length: NUM_SIDE_LINKS }).map((_, i) => (
           <div
-            key={order.id}
-            className={`border rounded-3xl p-6 ${order.hasUpdate ? "border-cola-red/40" : "border-espresso/10"}`}
+            key={`left-${i}`}
+            ref={(el) => {
+              leftLinkRefs.current[i] = el;
+            }}
+            style={{ zIndex: i % 2 === 0 ? 22 : 26 }}
+            className="absolute top-0 left-1/2 pointer-events-none will-change-transform"
           >
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-5">
-              <div>
-                <p className="font-display text-lg text-espresso">Order #{order.id.slice(0, 8)}</p>
-                <p className="text-xs text-espresso/50">
-                  {new Date(order.createdAt).toLocaleDateString(undefined, {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {order.hasUpdate && (
-                  <span className="text-xs font-semibold uppercase tracking-wide text-cream bg-cola-red px-3 py-1.5 rounded-full">
-                    New update
-                  </span>
-                )}
-                <span className="text-xs font-semibold uppercase tracking-wide text-espresso/60 bg-espresso/5 px-3 py-1.5 rounded-full">
-                  {STATUS_LABELS[order.status as keyof typeof STATUS_LABELS] ?? order.status}
-                </span>
-              </div>
+            {i % 2 === 0 ? (
+              <svg width="18" height="24" viewBox="0 0 18 24" className="overflow-visible">
+                <g filter="url(#metal-drop-shadow)">
+                  <rect
+                    x="3"
+                    y="2"
+                    width="12"
+                    height="20"
+                    rx="6"
+                    fill="none"
+                    stroke="url(#chrome-body)"
+                    strokeWidth="3.8"
+                  />
+                </g>
+              </svg>
+            ) : (
+              <svg width="12" height="20" viewBox="0 0 12 20" className="overflow-visible">
+                <g filter="url(#metal-drop-shadow)">
+                  <rect x="3" y="2" width="6" height="16" rx="3" fill="url(#chrome-cylinder)" />
+                </g>
+              </svg>
+            )}
+          </div>
+        ))}
+
+        {/* 3. PUFFY 3D SILVER HEART CHARM (Left Branch) */}
+        <div
+          ref={heartCharmRef}
+          style={{ transformOrigin: "50% 6px", zIndex: 28 }}
+          className="absolute top-0 left-1/2 pointer-events-none will-change-transform"
+        >
+          <svg width="56" height="60" viewBox="0 0 56 60" className="overflow-visible">
+            <g filter="url(#metal-drop-shadow)">
+              {/* Top jump ring on heart */}
+              <circle cx="28" cy="8" r="5.5" fill="none" stroke="url(#chrome-body)" strokeWidth="3.2" />
+              {/* 3D Puffy Heart Body */}
+              <path
+                d="M 28 52 C 28 52, 6 38, 6 22 C 6 12, 16 10, 24 16 C 26.5 18, 28 20.5, 28 20.5 C 28 20.5, 29.5 18, 32 16 C 40 10, 50 12, 50 22 C 50 38, 28 52, 28 52 Z"
+                fill="url(#puffy-chrome-heart)"
+                stroke="#3a3d45"
+                strokeWidth="0.7"
+              />
+              {/* Glossy curved studio reflection on upper-left lobe */}
+              <ellipse
+                cx="18"
+                cy="22"
+                rx="6"
+                ry="3.5"
+                transform="rotate(-28 18 22)"
+                fill="#ffffff"
+                opacity="0.85"
+              />
+              {/* Secondary soft rim highlight */}
+              <path
+                d="M 11 26 C 12 35, 23 44, 27.5 48"
+                fill="none"
+                stroke="#ffffff"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                opacity="0.55"
+              />
+            </g>
+          </svg>
+        </div>
+
+        {/* 4. RIGHT SUB-CHAIN LINKS (Leading to Silver Star Charm) */}
+        {Array.from({ length: NUM_SIDE_LINKS }).map((_, i) => (
+          <div
+            key={`right-${i}`}
+            ref={(el) => {
+              rightLinkRefs.current[i] = el;
+            }}
+            style={{ zIndex: i % 2 === 0 ? 22 : 26 }}
+            className="absolute top-0 left-1/2 pointer-events-none will-change-transform"
+          >
+            {i % 2 === 0 ? (
+              <svg width="18" height="24" viewBox="0 0 18 24" className="overflow-visible">
+                <g filter="url(#metal-drop-shadow)">
+                  <rect
+                    x="3"
+                    y="2"
+                    width="12"
+                    height="20"
+                    rx="6"
+                    fill="none"
+                    stroke="url(#chrome-body)"
+                    strokeWidth="3.8"
+                  />
+                </g>
+              </svg>
+            ) : (
+              <svg width="12" height="20" viewBox="0 0 12 20" className="overflow-visible">
+                <g filter="url(#metal-drop-shadow)">
+                  <rect x="3" y="2" width="6" height="16" rx="3" fill="url(#chrome-cylinder)" />
+                </g>
+              </svg>
+            )}
+          </div>
+        ))}
+
+        {/* 5. BEVELED 3D SILVER STAR CHARM (Right Branch) */}
+        <div
+          ref={starCharmRef}
+          style={{ transformOrigin: "50% 6px", zIndex: 28 }}
+          className="absolute top-0 left-1/2 pointer-events-none will-change-transform"
+        >
+          <svg width="58" height="62" viewBox="0 0 58 62" className="overflow-visible">
+            <g filter="url(#metal-drop-shadow)">
+              {/* Top jump ring on star */}
+              <circle cx="29" cy="7" r="5" fill="none" stroke="url(#chrome-body)" strokeWidth="3.2" />
+              {/* 5-Pointed Metallic Star */}
+              <polygon
+                points="29,11 34.8,24.2 49,25.8 38.2,35.4 41.2,49.5 29,42.2 16.8,49.5 19.8,35.4 9,25.8 23.2,24.2"
+                fill="url(#star-chrome)"
+                stroke="#373a40"
+                strokeWidth="1"
+                strokeLinejoin="round"
+              />
+              {/* Inner 3D facet lines for realistic metallic bevel */}
+              <polyline
+                points="29,12.5 29,31 47,26.2"
+                fill="none"
+                stroke="#ffffff"
+                strokeWidth="1.2"
+                opacity="0.8"
+              />
+              <polyline
+                points="11,26.2 29,31 17.5,48"
+                fill="none"
+                stroke="#ffffff"
+                strokeWidth="1"
+                opacity="0.6"
+              />
+            </g>
+          </svg>
+        </div>
+
+        {/* 6. CENTER MAIN CHAIN LINKS (Leading down to the ID Badge) */}
+        {Array.from({ length: NUM_MAIN_LINKS }).map((_, i) => (
+          <div
+            key={`main-${i}`}
+            ref={(el) => {
+              mainLinkRefs.current[i] = el;
+            }}
+            style={{ zIndex: i % 2 === 0 ? 15 : 24 }}
+            className="absolute top-0 left-1/2 pointer-events-none will-change-transform"
+          >
+            {i % 2 === 0 ? (
+              <svg width="24" height="32" viewBox="0 0 24 32" className="overflow-visible">
+                <g filter="url(#metal-drop-shadow)">
+                  <rect
+                    x="3.5"
+                    y="2.5"
+                    width="17"
+                    height="27"
+                    rx="8.5"
+                    fill="none"
+                    stroke="url(#chrome-body)"
+                    strokeWidth="5"
+                  />
+                  <rect
+                    x="3"
+                    y="2"
+                    width="18"
+                    height="28"
+                    rx="9"
+                    fill="none"
+                    stroke="url(#chrome-specular)"
+                    strokeWidth="1.1"
+                  />
+                </g>
+              </svg>
+            ) : (
+              <svg width="14" height="28" viewBox="0 0 14 28" className="overflow-visible">
+                <g filter="url(#metal-drop-shadow)">
+                  <rect
+                    x="3"
+                    y="2"
+                    width="8"
+                    height="24"
+                    rx="4"
+                    fill="url(#chrome-cylinder)"
+                    stroke="#2b2e33"
+                    strokeWidth="0.6"
+                  />
+                  <line
+                    x1="5.8"
+                    y1="4"
+                    x2="5.8"
+                    y2="24"
+                    stroke="#ffffff"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                    opacity="0.85"
+                  />
+                </g>
+              </svg>
+            )}
+          </div>
+        ))}
+
+        {/* 7. HANGING ID BADGE */}
+        <div
+          ref={cardRef}
+          style={{ transformOrigin: "50% 0px" }}
+          className="absolute top-0 left-1/2 w-[330px] sm:w-[340px] z-20 will-change-transform"
+        >
+          {/* U-Shaped Metal Badge Hook looping into the pouch slot hole */}
+          <div className="absolute -top-6 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+            <svg width="36" height="44" viewBox="0 0 36 44" className="overflow-visible">
+              <g filter="url(#metal-drop-shadow)">
+                <circle
+                  cx="18"
+                  cy="9"
+                  r="7"
+                  fill="none"
+                  stroke="url(#chrome-body)"
+                  strokeWidth="4.5"
+                />
+                <path
+                  d="M 13 13 C 11 24, 12 35, 18 35 C 24 35, 25 24, 21 15"
+                  fill="none"
+                  stroke="url(#chrome-cylinder)"
+                  strokeWidth="5.5"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M 12.5 14 C 11 23, 12 33, 17.5 33.5"
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  opacity="0.85"
+                />
+              </g>
+            </svg>
+          </div>
+
+          {/* Clear Plastic Pouch */}
+          <div className="relative bg-white/25 backdrop-blur-[3px] border-2 border-white/75 rounded-2xl p-3 sm:p-4 shadow-[0_25px_50px_rgba(0,0,0,0.14),inset_0_0_24px_rgba(255,255,255,0.75)]">
+            {/* Top Slot Hole & Side Rivets */}
+            <div className="flex justify-between items-center px-6 mb-2 pt-0.5 pointer-events-none">
+              <div className="w-3.5 h-3.5 rounded-full border-2 border-white/80 bg-cream/60 shadow-[inset_0_2px_3px_rgba(0,0,0,0.2)]" />
+              <div className="w-12 h-3.5 rounded-full border-2 border-white/80 bg-cream/70 shadow-[inset_0_2px_4px_rgba(0,0,0,0.25)]" />
+              <div className="w-3.5 h-3.5 rounded-full border-2 border-white/80 bg-cream/60 shadow-[inset_0_2px_3px_rgba(0,0,0,0.2)]" />
             </div>
 
-            <OrderStatusTracker order={order} />
+            {/* Ziploc seal line */}
+            <div className="absolute top-10 inset-x-0 h-1 border-y border-white/60 shadow-[0_1px_2px_rgba(0,0,0,0.05)] pointer-events-none" />
 
-            {order.events.length > 0 && <OrderHistory order={order} />}
+            {/* Paper Card */}
+            <div className="relative mt-4 bg-[#fdfbf7] rounded-sm shadow-sm overflow-hidden border border-black/5">
+              <div
+                className="absolute inset-0 mix-blend-multiply opacity-50 pointer-events-none"
+                style={{ backgroundImage: PAPER_TEXTURE }}
+              />
 
-            <div className="mt-6 pt-5 border-t border-espresso/10 flex flex-col gap-2">
-              {order.items.map((item, i) => (
-                <div key={i} className="flex justify-between text-sm">
-                  <span className="text-espresso/80">
-                    {item.name ?? item.productId}
-                    {item.variantLabel ? ` (${item.variantLabel})` : ""} × {item.quantity}
+              <div className="relative z-10 p-5 sm:p-6 flex flex-col items-center text-center">
+                <div className="w-full text-left mb-6 border-b-2 border-espresso pb-2 relative">
+                  <span className="absolute top-0 right-0 text-[9px] uppercase tracking-widest text-espresso/60">
+                    Tier: {profile?.isAdmin ? "Admin" : "Member"}
                   </span>
-                  <span className="text-espresso/60">₹{item.unitPrice * item.quantity}</span>
+                  <h1 className="font-display text-4xl leading-none text-espresso tracking-tight uppercase">
+                    The
+                    <br />
+                    Collector
+                  </h1>
+                  <p className="text-[9px] font-bold tracking-[0.2em] uppercase text-espresso mt-2">
+                    Official Member · BerryCola
+                  </p>
                 </div>
-              ))}
-              <div className="flex justify-between text-sm font-semibold pt-2">
-                <span>Subtotal</span>
-                <span>₹{order.subtotal}</span>
+
+                {/* PROFILE IMAGE UPLOAD */}
+                <div
+                  className={`relative w-32 h-32 mb-6 p-1 bg-white border border-espresso/15 shadow-sm rotate-1 group ${
+                    isEditing ? "cursor-pointer hover:border-cola-red transition-colors" : ""
+                  }`}
+                  onClick={() => isEditing && fileInputRef.current?.click()}
+                >
+                  {newPhoto || firebaseUser?.photoURL ? (
+                    <img
+                      src={isEditing ? newPhoto : firebaseUser?.photoURL || ""}
+                      alt="Profile"
+                      draggable={false}
+                      className="w-full h-full object-cover filter contrast-110 saturate-110 pointer-events-none"
+                      onError={(e) => (e.currentTarget.src = "https://via.placeholder.com/150")}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-[#e8dff5] flex items-center justify-center">
+                      <User size={40} className="text-espresso/30" />
+                    </div>
+                  )}
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                  />
+
+                  {isEditing && (
+                    <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex flex-col items-center justify-center text-center">
+                      <UploadCloud size={24} className="text-espresso mb-1" />
+                      <span className="text-[9px] uppercase font-bold text-espresso tracking-widest">
+                        Upload
+                        <br />
+                        Photo
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="w-full flex flex-col gap-5 mt-2">
+                  {/* NAME ROW */}
+                  <div className="relative flex items-end border-b-[1.5px] border-dashed border-espresso/40 pb-1">
+                    <span className="text-[10px] uppercase tracking-widest text-espresso font-semibold w-20 text-left">
+                      Name
+                    </span>
+
+                    {isEditing ? (
+                      <div className="flex-1 flex items-center gap-1 z-20">
+                        <input
+                          type="text"
+                          value={newName}
+                          onChange={(e) => setNewName(e.target.value)}
+                          className="font-handwritten text-3xl leading-none text-espresso/90 bg-white/50 border border-espresso/20 rounded px-2 outline-none w-full -rotate-2 -mb-2 shadow-inner"
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <span className="font-handwritten text-3xl leading-none text-espresso/90 absolute left-20 bottom-1 -rotate-2 truncate max-w-[130px]">
+                          {firebaseUser?.displayName || "Guest"}
+                        </span>
+                        <button
+                          onClick={() => setIsEditing(true)}
+                          className="absolute right-0 bottom-1 z-20 flex items-center gap-1 text-[9px] uppercase tracking-widest font-bold bg-espresso/5 border border-espresso/10 text-espresso/60 px-2 py-1 rounded-md hover:bg-cola-red hover:text-cream hover:border-cola-red transition-all shadow-sm"
+                        >
+                          <Edit2 size={10} /> Edit
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* EMAIL ROW */}
+                  <div className="relative flex items-end border-b-[1.5px] border-dashed border-espresso/40 pb-1">
+                    <span className="text-[10px] uppercase tracking-widest text-espresso font-semibold w-20 text-left">
+                      Email
+                    </span>
+                    {isEditing ? (
+                      <input
+                        type="email"
+                        value={newEmail}
+                        onChange={(e) => setNewEmail(e.target.value)}
+                        className="font-handwritten text-2xl leading-none text-espresso/90 bg-white/50 border border-espresso/20 rounded px-2 outline-none w-full -mb-1 shadow-inner truncate"
+                      />
+                    ) : (
+                      <span className="font-handwritten text-2xl leading-none text-espresso/90 absolute left-20 bottom-1 truncate max-w-[160px]">
+                        {firebaseUser?.email || "Unknown"}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* STATUS / RANK ROW (Editable Dropdown) */}
+                  <div className="relative flex items-end border-b-[1.5px] border-dashed border-espresso/40 pb-1">
+                    <span className="text-[10px] uppercase tracking-widest text-espresso font-semibold w-20 text-left">
+                      Status
+                    </span>
+                    {isEditing ? (
+                      <select
+                        value={statusRank}
+                        onChange={(e) => setStatusRank(e.target.value)}
+                        className="font-handwritten text-2xl leading-none text-espresso/90 bg-white/70 border border-espresso/20 rounded px-2 py-0.5 outline-none w-full -mb-1 shadow-inner cursor-pointer"
+                      >
+                        {RANK_OPTIONS.map((rank) => (
+                          <option key={rank} value={rank} className="font-sans text-sm">
+                            {rank}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="font-handwritten text-3xl leading-none text-espresso/90 absolute left-20 bottom-1 rotate-1 truncate max-w-[160px]">
+                        {statusRank}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {isEditing && (
+                  <div className="w-full flex justify-end gap-2 mt-4 z-20 relative">
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      className="bg-espresso/10 text-espresso p-2 rounded-md hover:bg-espresso/20 transition-colors shadow-sm"
+                    >
+                      <X size={16} />
+                    </button>
+                    <button
+                      onClick={handleSaveProfile}
+                      disabled={isSaving}
+                      className="bg-cola-red text-cream p-2 rounded-md hover:bg-cola-red-dark transition-colors shadow-sm"
+                    >
+                      <Check size={16} />
+                    </button>
+                  </div>
+                )}
+
+                <div className="w-full flex justify-between items-end mt-8">
+                  <span className="text-[7px] uppercase tracking-widest text-espresso/50 text-left max-w-[100px] leading-tight">
+                    The holder of this card is an official BerryCola collector.
+                  </span>
+                  <span className="font-display text-xl tracking-widest text-espresso">
+                    {serialNumber}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-        ))}
+        </div>
       </div>
-    </div>
-  );
-}
 
-const COLLAPSED_EVENTS = 3;
-
-function OrderHistory({ order }: { order: Order }) {
-  const [expanded, setExpanded] = useState(false);
-  const events = expanded ? order.events : order.events.slice(0, COLLAPSED_EVENTS);
-
-  return (
-    <div className="mt-6">
-      <p className="text-xs font-semibold uppercase tracking-wide text-espresso/50 mb-3">Tracking updates</p>
-      <OrderTimeline events={events} />
-      {order.events.length > COLLAPSED_EVENTS && (
-        <button
-          onClick={() => setExpanded((v) => !v)}
-          className="mt-3 text-xs font-semibold text-cola-red hover:underline"
-        >
-          {expanded ? "Show less" : `Show all ${order.events.length} updates`}
-        </button>
-      )}
+      <motion.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        onClick={handleLogOut}
+        disabled={isLoggingOut}
+        className="mt-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-cola-red hover:text-espresso transition-colors disabled:opacity-50"
+      >
+        <LogOut size={16} />
+        {isLoggingOut ? "Signing out..." : "Sign Out"}
+      </motion.button>
     </div>
   );
 }

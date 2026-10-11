@@ -7,11 +7,12 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useOrderUpdates } from "../context/OrderUpdatesContext";
 
+// Updated to use hash links pointing to the folder sections
 const NAV_LINKS = [
-  { label: "Shop", href: "/shop" },
-  { label: "Bag Charms", href: "/shop?category=Bag+Charms" },
-  { label: "Our Story", href: "/about" },
-  { label: "Contact", href: "/contact" },
+  { label: "Shop", href: "/#shop" },
+  { label: "Bag Charms", href: "/#bag-charms" },
+  { label: "Our Story", href: "/#our-story" },
+  { label: "Contact", href: "/#contact" },
 ];
 
 export default function Navbar() {
@@ -55,13 +56,13 @@ export default function Navbar() {
 
           <nav className="hidden md:flex items-center gap-9">
             {NAV_LINKS.map((link) => (
-              <Link
+              <a
                 key={link.label}
-                to={link.href}
+                href={link.href}
                 className="relative text-[13px] font-medium uppercase tracking-[0.12em] text-espresso/80 hover:text-cola-red transition-colors after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[1.5px] after:bg-cola-red hover:after:w-full after:transition-all after:duration-300"
               >
                 {link.label}
-              </Link>
+              </a>
             ))}
           </nav>
 
@@ -139,12 +140,13 @@ export default function Navbar() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05 }}
                 >
-                  <Link
-                    to={link.href}
+                  <a
+                    href={link.href}
+                    onClick={() => setMenuOpen(false)} // Close menu when clicked
                     className="block py-3 text-lg font-display text-espresso border-b border-espresso/10"
                   >
                     {link.label}
-                  </Link>
+                  </a>
                 </motion.div>
               ))}
               <motion.div
@@ -154,6 +156,7 @@ export default function Navbar() {
               >
                 <Link
                   to={firebaseUser ? "/account" : "/login"}
+                  onClick={() => setMenuOpen(false)}
                   className="block py-3 text-lg font-display text-espresso border-b border-espresso/10"
                 >
                   {firebaseUser ? "Account" : "Login"}
@@ -167,6 +170,7 @@ export default function Navbar() {
                 >
                   <Link
                     to="/admin/analytics"
+                    onClick={() => setMenuOpen(false)}
                     className="block py-3 text-lg font-display text-cola-red border-b border-espresso/10"
                   >
                     Admin dashboard
