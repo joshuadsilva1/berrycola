@@ -25,10 +25,10 @@ const SHAKE_TIMES = SHAKE_ROTATE.map((_, i) => i / (SHAKE_ROTATE.length - 1));
 
 const fizzBubbles = Array.from({ length: 16 }, (_, i) => ({
   id: i,
-  x: (Math.random() - 0.5) * 220,
-  y: -(100 + Math.random() * 160),
+  x: (Math.random() - 0.5) * 320,
+  y: -(140 + Math.random() * 220),
   delay: Math.random() * 0.15,
-  scale: 0.4 + Math.random() * 0.8,
+  scale: 0.5 + Math.random() * 1.0,
 }));
 
 export default function IntroSplash({ onFinish }: IntroSplashProps) {
@@ -61,9 +61,13 @@ export default function IntroSplash({ onFinish }: IntroSplashProps) {
   const zoomed = phase === "zooming" || phase === "exiting";
 
   const canAnimate = () => {
-    if (phase === "shaking") return { rotate: SHAKE_ROTATE, x: SHAKE_X, y: SHAKE_Y };
-    if (phase === "opened") return { rotate: 0, x: 0, y: 0, scale: [1, 1.14, 1.06] };
-    return { rotate: 0, x: 0, y: 0, scale: 2.5 };
+    if (phase === "shaking") {
+      return { rotate: SHAKE_ROTATE, x: SHAKE_X, y: SHAKE_Y, scale: 1 }; 
+    }
+    if (phase === "opened") {
+      return { rotate: 0, x: 0, y: 0, scale: [1, 1.12, 1.05] }; // <-- HERE (Pop size)
+    }
+    return { rotate: 0, x: 0, y: 50, scale: 2.1 }; // (Zoomed size)
   };
 
   const canTransition = (): Transition => {
@@ -93,10 +97,10 @@ export default function IntroSplash({ onFinish }: IntroSplashProps) {
         Skip
       </button>
 
-      <div className="relative flex items-center justify-center" style={{ width: 220, height: 340 }}>
+    <div className="relative flex items-center justify-center w-[300px] h-[460px] sm:w-[380px] sm:h-[280px]">
         <motion.div
-          className="relative"
-          style={{ width: 220, height: 340, transformOrigin: zoomed ? "50% 56%" : "50% 85%" }}
+          className="relative w-full h-full"
+          style={{ transformOrigin: zoomed ? "50% 75%" : "50% 95%" }}
           animate={canAnimate()}
           transition={canTransition()}
         >
@@ -120,7 +124,7 @@ export default function IntroSplash({ onFinish }: IntroSplashProps) {
               <motion.span
                 key={b.id}
                 className="absolute rounded-full bg-cream/80"
-                style={{ width: 7 * b.scale, height: 7 * b.scale }}
+                style={{ width: 9 * b.scale, height: 9 * b.scale }}
                 initial={{ opacity: 0, x: 0, y: 0 }}
                 animate={{ opacity: [0, 1, 0], x: b.x, y: b.y }}
                 transition={{ duration: 0.9, delay: b.delay, ease: "easeOut" }}
@@ -128,9 +132,9 @@ export default function IntroSplash({ onFinish }: IntroSplashProps) {
             ))}
             <motion.span
               className="absolute rounded-full border-2"
-              style={{ borderColor: "#fffffe", width: 20, height: 20, left: -10, top: -10 }}
+              style={{ borderColor: "#fffffe", width: 26, height: 26, left: -13, top: -13 }}
               initial={{ scale: 0.4, opacity: 0.9 }}
-              animate={{ scale: 12, opacity: 0 }}
+              animate={{ scale: 14, opacity: 0 }}
               transition={{ duration: 0.7, ease: "easeOut" }}
             />
           </div>
