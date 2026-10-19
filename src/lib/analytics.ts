@@ -3,7 +3,7 @@
 // shopper leaves). Visitors are an anonymous random id kept in the browser;
 // a session ends after 30 minutes without activity.
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5001/api";
+const API_BASE = import.meta.env.API_BASE_URL;
 const ENDPOINT = `${API_BASE}/analytics/events`;
 const VISITOR_KEY = "bc-visitor";
 const SESSION_KEY = "bc-session";
