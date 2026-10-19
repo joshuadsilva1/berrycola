@@ -1,7 +1,17 @@
 import type { Category, Crop, Product } from "../data/products";
 import { auth } from "./firebase";
 
-const API_BASE = import.meta.env.API_BASE_URL;
+function resolveApiBase(): string {
+  const candidates = [import.meta.env.API_BASE_URL, import.meta.env.VITE_API_BASE_URL];
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim() && c.trim() !== "undefined") {
+      return c.trim().replace(/\/+$/, "");
+    }
+  }
+  return "https://berrycola-backend.onrender.com/api";
+}
+
+const API_BASE = resolveApiBase();
 
 export function resolveImageUrl(url: string | null | undefined): string | undefined {
   if (!url) return undefined;

@@ -3,7 +3,17 @@
 // shopper leaves). Visitors are an anonymous random id kept in the browser;
 // a session ends after 30 minutes without activity.
 
-const API_BASE = import.meta.env.API_BASE_URL;
+function resolveApiBase(): string {
+  const candidates = [import.meta.env.API_BASE_URL, import.meta.env.VITE_API_BASE_URL];
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim() && c.trim() !== "undefined") {
+      return c.trim().replace(/\/+$/, "");
+    }
+  }
+  return "https://berrycola-backend.onrender.com/api";
+}
+
+const API_BASE = resolveApiBase();
 const ENDPOINT = `${API_BASE}/analytics/events`;
 const VISITOR_KEY = "bc-visitor";
 const SESSION_KEY = "bc-session";
