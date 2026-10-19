@@ -20,7 +20,7 @@ export default function NewsletterForm({ variant = "dark" }: { variant?: "dark" 
   if (status === "done") {
     return (
       <p className={variant === "dark" ? "text-cream/80 text-sm" : "text-espresso/70 text-sm"}>
-        You're on the list — watch your inbox.
+        You're on the list watch your inbox.
       </p>
     );
   }
@@ -44,15 +44,15 @@ export default function NewsletterForm({ variant = "dark" }: { variant?: "dark" 
           disabled={status === "loading"}
           className={
             variant === "dark"
-              ? "bg-cola-red px-4 rounded-r-full text-sm font-semibold hover:bg-cola-red-dark transition-colors disabled:opacity-60"
-              : "bg-espresso text-cream px-6 py-3 rounded-full font-semibold hover:bg-charcoal transition-colors disabled:opacity-60"
+              ? "bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] px-4 rounded-r-full text-sm font-semibold hover:bg-cola-red-dark transition-colors disabled:opacity-60 cursor-pointer"
+              : "bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] active:translate-y-0.5 px-6 py-2.5 rounded-full font-semibold hover:bg-[#b81d1d] transition-all disabled:opacity-60 cursor-pointer"
           }
         >
           {status === "loading" ? "…" : variant === "dark" ? "Join" : "Subscribe"}
         </button>
       </form>
       {status === "error" && (
-        <p className="text-cola-red text-xs mt-2">Something went wrong — try again in a moment.</p>
+        <p className="text-cola-red text-xs mt-2">Something went wrong, try again in a moment.</p>
       )}
     </div>
   );

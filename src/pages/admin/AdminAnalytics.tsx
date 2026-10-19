@@ -39,7 +39,7 @@ const TREND_METRICS = [
   { key: "revenue", label: "Revenue", format: inr },
 ] as const;
 
-const pct = (n: number | null) => (n == null ? "—" : `${n}%`);
+const pct = (n: number | null) => (n == null ? ", " : `${n}%`);
 
 export default function AdminAnalytics() {
   const [range, setRange] = useState<AnalyticsRange>(() => {
@@ -129,7 +129,7 @@ export default function AdminAnalytics() {
             <StatTile label="Orders" value={num(k.orders)} current={k.orders} previous={p.orders} />
             <StatTile
               label="Avg order value"
-              value={k.avgOrderValue != null ? inr(k.avgOrderValue) : "—"}
+              value={k.avgOrderValue != null ? inr(k.avgOrderValue) : ", "}
               current={k.avgOrderValue}
               previous={p.avgOrderValue}
             />
@@ -145,7 +145,7 @@ export default function AdminAnalytics() {
             <StatTile label="Page views" value={num(k.pageviews)} current={k.pageviews} previous={p.pageviews} />
             <StatTile
               label="Pages / session"
-              value={k.pagesPerSession != null ? String(k.pagesPerSession) : "—"}
+              value={k.pagesPerSession != null ? String(k.pagesPerSession) : ", "}
               current={k.pagesPerSession}
               previous={p.pagesPerSession}
             />
@@ -227,7 +227,7 @@ export default function AdminAnalytics() {
           </div>
 
           {/* Products */}
-          <Card title="Products" subtitle="Views, add-to-bags and sales per product — click a column to sort">
+          <Card title="Products" subtitle="Views, add-to-bags and sales per product, click a column to sort">
             <ProductTable rows={report.products} />
           </Card>
 
@@ -363,7 +363,7 @@ export default function AdminAnalytics() {
 }
 
 function hours(h: number | null) {
-  if (h == null) return "—";
+  if (h == null) return ", ";
   if (h < 48) return `${h.toFixed(1)} hrs`;
   return `${(h / 24).toFixed(1)} days`;
 }
@@ -543,7 +543,7 @@ function LivePanel() {
             ))}
           </ul>
         ) : (
-          <Empty>No activity yet — it'll show up here as soon as someone visits.</Empty>
+          <Empty>No activity yet, it'll show up here as soon as someone visits.</Empty>
         )}
       </Card>
     </div>

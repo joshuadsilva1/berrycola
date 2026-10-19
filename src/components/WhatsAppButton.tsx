@@ -1,15 +1,29 @@
-import { MessageCircle } from "lucide-react";
+import { useCart } from "../context/CartContext";
 
 export default function WhatsAppButton() {
+  const { isOpen } = useCart();
+
+  if (isOpen) return null;
+
   return (
     <a
       href="https://wa.me/918286310707"
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-110 hover:shadow-xl"
+      className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all"
       aria-label="Chat on WhatsApp"
+      title="Chat on WhatsApp"
     >
-      <MessageCircle size={30} fill="currentColor" />
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2ZM12.05 20.16C10.57 20.16 9.11 19.76 7.85 19.01L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.98 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67C14.25 3.67 16.32 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.16 12.05 20.16ZM16.56 13.99C16.31 13.87 15.09 13.27 14.87 13.18C14.64 13.1 14.48 13.06 14.31 13.3C14.15 13.55 13.67 14.11 13.53 14.27C13.38 14.44 13.24 14.46 12.99 14.34C12.74 14.21 11.94 13.95 11 13.11C10.26 12.45 9.77 11.64 9.62 11.39C9.48 11.15 9.6 11.01 9.73 10.89C9.84 10.78 9.98 10.6 10.1 10.46C10.22 10.31 10.27 10.21 10.35 10.04C10.43 9.88 10.39 9.73 10.33 9.61C10.27 9.49 9.77 8.26 9.57 7.77C9.37 7.29 9.16 7.35 9.01 7.34C8.86 7.33 8.7 7.33 8.53 7.33C8.37 7.33 8.1 7.39 7.87 7.64C7.65 7.89 7.01 8.49 7.01 9.71C7.01 10.94 7.9 12.13 8.02 12.3C8.14 12.46 9.77 14.98 12.27 16.06C12.86 16.32 13.33 16.47 13.69 16.58C14.29 16.77 14.83 16.74 15.26 16.68C15.74 16.61 16.73 16.08 16.93 15.5C17.14 14.92 17.14 14.43 17.08 14.33C17.01 14.22 16.81 14.11 16.56 13.99Z" />
+      </svg>
     </a>
   );
 }

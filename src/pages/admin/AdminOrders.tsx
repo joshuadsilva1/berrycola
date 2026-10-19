@@ -152,7 +152,7 @@ function AdminOrderRow({
           <li key={i}>
             {item.quantity} × {item.name ?? item.productId}
             {item.variantLabel && (
-              <span className="font-semibold text-espresso"> — {item.variantLabel}</span>
+              <span className="font-semibold text-espresso"> , {item.variantLabel}</span>
             )}
           </li>
         ))}
@@ -198,7 +198,7 @@ function AdminOrderRow({
         >
           {saving ? "Saving…" : "Save"}
         </button>
-        {saved && <span className="text-xs text-espresso/50">Saved — customer notified</span>}
+        {saved && <span className="text-xs text-espresso/50">Saved, customer notified</span>}
         {order.trackingId && (
           <button
             onClick={handleSync}

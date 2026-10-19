@@ -12,7 +12,7 @@ export const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 export const num = (n: number) => Math.round(n).toLocaleString("en-IN");
 
 export function duration(seconds: number | null) {
-  if (seconds == null) return "—";
+  if (seconds == null) return ",";
   if (seconds < 60) return `${seconds}s`;
   const m = Math.floor(seconds / 60);
   return `${m}m ${Math.round(seconds % 60)}s`;
@@ -102,7 +102,7 @@ export function StatTile({
             {delta.text}
           </span>
         ) : (
-          <span className="text-espresso/35">—</span>
+          <span className="text-espresso/35">,</span>
         )}
         {delta && <span className="text-espresso/40 ml-1">vs previous</span>}
       </p>

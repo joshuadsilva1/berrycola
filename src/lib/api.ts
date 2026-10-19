@@ -57,8 +57,17 @@ export function subscribeNewsletter(email: string) {
 }
 
 export interface OrderPayload {
-  customer: { name: string; email: string; phone?: string };
+  customer?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
+  };
   items: { productId: string; variantId?: string; quantity: number }[];
+  promoCode?: string;
 }
 
 export interface Order {
@@ -67,7 +76,12 @@ export interface Order {
   customerName: string;
   customerEmail: string;
   customerPhone: string | null;
+  shippingAddress?: string | null;
   subtotal: number;
+  promoCode?: string | null;
+  discountAmount?: number;
+  discountTotal?: number;
+  total?: number;
   status: string;
   carrier: string | null;
   trackingId: string | null;
@@ -130,6 +144,20 @@ export function fetchMe() {
   return authRequest("/me");
 }
 
+export interface ProfileUpdateInput {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  state?: string;
+  pincode: string;
+}
+
+export function updateMyProfile(payload: ProfileUpdateInput) {
+  return authRequest("/me", { method: "PATCH", body: JSON.stringify(payload) });
+}
+
 export function fetchAdminOrders(params?: { status?: string; q?: string }) {
   const search = new URLSearchParams();
   if (params?.status) search.set("status", params.status);
@@ -168,6 +196,12 @@ export interface ProductInput {
   inStock?: boolean;
   variants?: ImageInput[];
   gallery?: ImageInput[];
+  stockQuantity?: number | null;
+  sortOrder?: number;
+  deliveryMinDays?: number | null;
+  deliveryMaxDays?: number | null;
+  deliveryMinDate?: string | null;
+  deliveryMaxDate?: string | null;
 }
 
 export interface ImageInput {
@@ -191,21 +225,85 @@ export function updateProduct(id: string, payload: ProductInput) {
   });
 }
 
+export function reorderProducts(orderedIds: string[]) {
+  return authRequest<Product[]>("/admin/products/reorder", {
+    method: "POST",
+    body: JSON.stringify({ orderedIds }),
+  });
+}
+
 export function deleteProduct(id: string) {
   return authRequest<void>(`/admin/products/${id}`, { method: "DELETE" });
+}
+
+async function normalizeImageFile(file: File): Promise<File> {
+  const validExt = /\.(jpe?g|png|webp|gif|svg)$/i.test(file.name);
+  if (validExt && file.size <= 5 * 1024 * 1024) {
+    return file;
+  }
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const maxDim = 2200;
+      let w = img.naturalWidth || 1000;
+      let h = img.naturalHeight || 1000;
+      if (w > maxDim || h > maxDim) {
+        const scale = Math.min(maxDim / w, maxDim / h);
+        w = Math.max(1, Math.round(w * scale));
+        h = Math.max(1, Math.round(h * scale));
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(file);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, w, h);
+      const isPng = file.type === "image/png" || /\.png$/i.test(file.name);
+      const mime = isPng ? "image/png" : "image/jpeg";
+      const ext = isPng ? "png" : "jpg";
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            resolve(file);
+            return;
+          }
+          const baseName = (file.name || "photo").replace(/\.[^.]+$/, "");
+          resolve(new File([blob], `${baseName}.${ext}`, { type: mime }));
+        },
+        mime,
+        0.92,
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
 }
 
 export async function uploadImage(file: File): Promise<string> {
   const user = auth.currentUser;
   if (!user) throw new Error("You need to be signed in for that.");
+  const prepared = await normalizeImageFile(file);
   const form = new FormData();
-  form.append("file", file);
-  // Not via request(): the browser must set the multipart Content-Type itself.
-  const res = await fetch(`${API_BASE}/admin/uploads`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${await user.getIdToken()}` },
-    body: form,
-  });
+  form.append("file", prepared);
+  let res: Response;
+  try {
+    // Not via request(): the browser must set the multipart Content-Type itself.
+    res = await fetch(`${API_BASE}/admin/uploads`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${await user.getIdToken()}` },
+      body: form,
+    });
+  } catch {
+    throw new Error(`Could not connect to backend (${API_BASE}). Make sure "python run.py" is running.`);
+  }
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(body.error ?? `Upload failed: ${res.status}`);
   return body.url;
@@ -345,11 +443,32 @@ export interface Slide {
   link: string;
 }
 
+export interface StaticDetailItem {
+  id: string;
+  icon: "Truck" | "ShieldCheck" | "RotateCcw" | "Clock" | "Sparkles";
+  title: string;
+  description: string;
+}
+
+export interface ProductPageDetails {
+  defaultDeliveryMinDays?: number | null;
+  defaultDeliveryMaxDays?: number | null;
+  defaultDeliveryMinDate?: string | null;
+  defaultDeliveryMaxDate?: string | null;
+  shippingNote?: string;
+  returnPolicy?: string;
+  warrantyNote?: string;
+  customItems?: StaticDetailItem[];
+}
+
 export interface StorefrontSettings {
-  splashEnabled: boolean;
+  splashEnabled?: boolean;
   sliderSlides: Slide[];
+  trendingMode: "auto" | "manual";
   trendingCategories: string[];
   categoryImages: Record<string, string>;
+  customCategories: string[]; // Stores categories created directly in the admin
+  productPageDetails?: ProductPageDetails;
 }
 
 // Public: Anyone can read the storefront settings (for the homepage)
@@ -358,26 +477,11 @@ export function fetchStorefront() {
 }
 
 // Admin: Only admins can save storefront settings
-export function updateStorefront(payload: StorefrontSettings) {
+export function updateStorefront(payload: Partial<StorefrontSettings>) {
   return authRequest<StorefrontSettings>("/admin/storefront", {
     method: "PATCH",
     body: JSON.stringify(payload),
   });
-}
-
-
-export interface Slide {
-  imageUrl: string;
-  title: string;
-  link: string;
-}
-
-export interface StorefrontSettings {
-  sliderSlides: Slide[];
-  trendingMode: "auto" | "manual";
-  trendingCategories: string[];
-  categoryImages: Record<string, string>;
-  customCategories: string[]; // Stores categories created directly in the admin
 }
 
 
@@ -421,4 +525,84 @@ export function validatePromo(code: string, subtotal: number) {
     method: "POST",
     body: JSON.stringify({ code, subtotal })
   });
+}
+
+// --- REVIEWS (VERIFIED BUYERS) ---
+export interface ReviewItem {
+  id: number;
+  productId: string;
+  productName?: string | null;
+  userId?: string | null;
+  orderId?: string | null;
+  authorName: string;
+  rating: number;
+  title?: string | null;
+  body: string;
+  imageUrl?: string | null;
+  verifiedPurchase: boolean;
+  createdAt: string | null;
+}
+
+export interface ProductReviewsResponse {
+  reviews: ReviewItem[];
+  averageRating: number;
+  totalCount: number;
+  hasPurchased?: boolean;
+  alreadyReviewed?: boolean;
+  canReview?: boolean;
+}
+
+export function fetchAllReviews(productId?: string) {
+  const q = productId ? `?productId=${encodeURIComponent(productId)}` : "";
+  return request<ProductReviewsResponse>(`/reviews${q}`);
+}
+
+export async function fetchProductReviews(productId: string): Promise<ProductReviewsResponse> {
+  const user = auth.currentUser;
+  if (user) {
+    try {
+      const idToken = await user.getIdToken();
+      return await request<ProductReviewsResponse>(`/products/${encodeURIComponent(productId)}/reviews`, {
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+    } catch {
+      // Fall back to unauthenticated fetch
+    }
+  }
+  return request<ProductReviewsResponse>(`/products/${encodeURIComponent(productId)}/reviews`);
+}
+
+export function createProductReview(
+  productId: string,
+  payload: {
+    rating: number;
+    title?: string;
+    body: string;
+    imageUrl?: string;
+    authorName?: string;
+  }
+) {
+  return authRequest<ReviewItem>(`/products/${encodeURIComponent(productId)}/reviews`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function uploadReviewImage(file: File): Promise<string> {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Please sign in to upload a review photo.");
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_BASE}/reviews/upload`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${await user.getIdToken()}` },
+    body: form,
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error ?? `Upload failed: ${res.status}`);
+  return body.url;
+}
+
+export function deleteReview(reviewId: number) {
+  return authRequest<void>(`/reviews/${reviewId}`, { method: "DELETE" });
 }

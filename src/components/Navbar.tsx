@@ -7,12 +7,11 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useOrderUpdates } from "../context/OrderUpdatesContext";
 
-// Updated to use hash links pointing to the folder sections
 const NAV_LINKS = [
-  { label: "Shop", href: "/#shop" },
-  { label: "Bag Charms", href: "/#bag-charms" },
-  { label: "Our Story", href: "/#our-story" },
-  { label: "Contact", href: "/#contact" },
+  { label: "Shop", href: "/shop" },
+  { label: "Bag Charms", href: "/shop?category=Bag+Charms" },
+  { label: "Our Story", href: "/about" },
+  { label: "Contact", href: "/contact" },
 ];
 
 export default function Navbar() {
@@ -50,37 +49,37 @@ export default function Navbar() {
               className="w-10 h-10 rounded-full shadow-md transition-transform duration-300 group-hover:rotate-12"
             />
             <span className="font-display text-lg tracking-wide text-espresso hidden sm:block">
-              BerryCola
+              BERRYCOLA
             </span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-9">
             {NAV_LINKS.map((link) => (
-              <a
+              <Link
                 key={link.label}
-                href={link.href}
+                to={link.href}
                 className="relative text-[13px] font-medium uppercase tracking-[0.12em] text-espresso/80 hover:text-cola-red transition-colors after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[1.5px] after:bg-cola-red hover:after:w-full after:transition-all after:duration-300"
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
           </nav>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button
               aria-label="Search"
-              className="hidden sm:flex w-9 h-9 items-center justify-center rounded-full text-espresso/80 hover:text-cola-red hover:bg-espresso/5 transition-colors"
+              className="hidden sm:flex w-9 h-9 items-center justify-center rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-espresso hover:text-cola-red transition-all"
             >
-              <Search size={18} />
+              <Search size={17} />
             </button>
             <Link
               to={firebaseUser ? "/account" : "/login"}
               aria-label={firebaseUser ? "Account" : "Login"}
-              className="relative hidden sm:flex w-9 h-9 items-center justify-center rounded-full text-espresso/80 hover:text-cola-red hover:bg-espresso/5 transition-colors"
+              className="relative hidden sm:flex w-9 h-9 items-center justify-center rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-espresso hover:text-cola-red transition-all"
             >
-              <User size={18} />
+              <User size={17} />
               {updates.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-cola-red ring-2 ring-cream" />
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-cola-red border border-[#1e1a18]" />
               )}
             </Link>
             {profile?.isAdmin && (
@@ -88,24 +87,24 @@ export default function Navbar() {
                 to="/admin/analytics"
                 aria-label="Admin dashboard"
                 title="Admin dashboard"
-                className="flex w-9 h-9 items-center justify-center rounded-full text-cola-red bg-cola-red/10 hover:bg-cola-red hover:text-cream transition-colors"
+                className="flex w-9 h-9 items-center justify-center rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-cola-red hover:bg-cola-red hover:text-[#fbf5e9] transition-all"
               >
-                <LayoutDashboard size={18} />
+                <LayoutDashboard size={17} />
               </Link>
             )}
             <button
               aria-label="Open cart"
               onClick={openCart}
-              className="relative flex w-9 h-9 items-center justify-center rounded-full text-espresso/80 hover:text-cola-red hover:bg-espresso/5 transition-colors"
+              className="relative flex w-9 h-9 items-center justify-center rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-espresso hover:text-cola-red transition-all"
             >
-              <ShoppingBag size={19} />
+              <ShoppingBag size={17} />
               <AnimatePresence>
                 {count > 0 && (
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
-                    className="absolute -top-1 -right-1 h-[18px] min-w-[18px] px-1 rounded-full bg-cola-red text-cream text-[10px] font-bold flex items-center justify-center"
+                    className="absolute -top-1.5 -right-1.5 h-[18px] min-w-[18px] px-1 rounded-full bg-cola-red border border-[#1e1a18] text-cream text-[10px] font-bold flex items-center justify-center"
                   >
                     {count}
                   </motion.span>
@@ -115,9 +114,9 @@ export default function Navbar() {
             <button
               aria-label="Toggle menu"
               onClick={() => setMenuOpen((v) => !v)}
-              className="md:hidden flex w-9 h-9 items-center justify-center text-espresso"
+              className="md:hidden flex w-9 h-9 items-center justify-center rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-espresso hover:text-cola-red transition-all"
             >
-              {menuOpen ? <X size={22} /> : <Menu size={22} />}
+              {menuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
           </div>
         </div>
@@ -140,13 +139,13 @@ export default function Navbar() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05 }}
                 >
-                  <a
-                    href={link.href}
-                    onClick={() => setMenuOpen(false)} // Close menu when clicked
+                  <Link
+                    to={link.href}
+                    onClick={() => setMenuOpen(false)}
                     className="block py-3 text-lg font-display text-espresso border-b border-espresso/10"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </motion.div>
               ))}
               <motion.div

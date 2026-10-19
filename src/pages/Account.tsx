@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LogOut, Edit2, Check, X, UploadCloud, User } from "lucide-react";
+import { LogOut, Edit2, Check, X, UploadCloud, User, MapPin, Phone, Mail, ArrowRight } from "lucide-react";
 import { updateProfile, updateEmail } from "firebase/auth";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, isProfileComplete } from "../context/AuthContext";
+import { updateMyProfile } from "../lib/api";
 
 const PAPER_TEXTURE = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E")`;
 
@@ -25,18 +26,30 @@ const NUM_SIDE_LINKS = 4;
 const SIDE_LINK_LEN = 11;
 
 export default function Account() {
-  const { firebaseUser, profile, logOut } = useAuth();
+  const { firebaseUser, profile, loading, logOut, refreshProfile } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectAfterSave = (location.state as { from?: string } | null)?.from;
+
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Edit State
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeliveryForm, setShowDeliveryForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [newAddress, setNewAddress] = useState("");
+  const [newCity, setNewCity] = useState("");
+  const [newState, setNewState] = useState("");
+  const [newPincode, setNewPincode] = useState("");
   const [newPhoto, setNewPhoto] = useState("");
   const [statusRank, setStatusRank] = useState("Charm Addict");
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  const profileDone = isProfileComplete(profile);
+  const needsSetup = !loading && Boolean(firebaseUser) && !profileDone;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -89,12 +102,10 @@ export default function Account() {
       }
 
       // 2. LEFT SUB-CHAIN + PUFFY HEART CHARM
-      // Starts slightly left on the O-ring (-7px) and drapes outward at ~ -32 degrees
       let leftX = -7;
       let leftY = RING_BOTTOM_Y - 2;
 
       for (let i = 0; i < NUM_SIDE_LINKS; i++) {
-        // Natural outward splay that curves downward toward the end due to heart weight
         const baseAngle = -0.58 + i * 0.075;
         const sway = Math.sin(t * 1.25 - i * 0.22 + 0.6) * 0.065;
         const theta = baseAngle + sway;
@@ -120,7 +131,6 @@ export default function Account() {
       }
 
       // 3. RIGHT SUB-CHAIN + STAR CHARM
-      // Starts slightly right on the O-ring (+7px) and drapes outward at ~ +34 degrees
       let rightX = 7;
       let rightY = RING_BOTTOM_Y - 2;
 
@@ -157,19 +167,26 @@ export default function Account() {
   }, []);
 
   useEffect(() => {
-    if (firebaseUser) {
-      setNewName(firebaseUser.displayName || "");
-      setNewEmail(firebaseUser.email || "");
-      setNewPhoto(firebaseUser.photoURL || "");
+    if (firebaseUser || profile) {
+      setNewName(profile?.name || firebaseUser?.displayName || "");
+      setNewEmail(profile?.email || firebaseUser?.email || "");
+      setNewPhone(profile?.phone || firebaseUser?.phoneNumber || "");
+      setNewAddress(profile?.address || "");
+      setNewCity(profile?.city || "");
+      setNewState(profile?.state || "");
+      setNewPincode(profile?.pincode || "");
+      setNewPhoto(firebaseUser?.photoURL || "");
 
-      const savedRank = localStorage.getItem(`bc-rank-${firebaseUser.uid}`);
-      if (savedRank) {
-        setStatusRank(savedRank);
-      } else if (profile?.isAdmin) {
-        setStatusRank("Founder");
+      if (firebaseUser) {
+        const savedRank = localStorage.getItem(`bc-rank-${firebaseUser.uid}`);
+        if (savedRank) {
+          setStatusRank(savedRank);
+        } else if (profile?.isAdmin) {
+          setStatusRank("Founder");
+        }
       }
     }
-  }, [firebaseUser, profile, isEditing]);
+  }, [firebaseUser, profile, isEditing, showDeliveryForm]);
 
   const handleLogOut = async () => {
     setIsLoggingOut(true);
@@ -214,7 +231,8 @@ export default function Account() {
     reader.readAsDataURL(file);
   };
 
-  const handleSaveProfile = async () => {
+  const handleSaveProfile = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!firebaseUser) return;
     setIsSaving(true);
     setErrorMsg("");
@@ -222,25 +240,37 @@ export default function Account() {
     try {
       localStorage.setItem(`bc-rank-${firebaseUser.uid}`, statusRank);
 
+      await updateMyProfile({
+        name: newName.trim(),
+        email: newEmail.trim(),
+        phone: newPhone.trim(),
+        address: newAddress.trim(),
+        city: newCity.trim(),
+        state: newState.trim() || undefined,
+        pincode: newPincode.trim(),
+      });
+
       if (newName !== firebaseUser.displayName || newPhoto !== firebaseUser.photoURL) {
         await updateProfile(firebaseUser, {
           displayName: newName.trim(),
           photoURL: newPhoto,
-        });
+        }).catch(() => {});
       }
 
       if (newEmail.trim() && newEmail !== firebaseUser.email) {
-        await updateEmail(firebaseUser, newEmail.trim());
+        await updateEmail(firebaseUser, newEmail.trim()).catch(() => {});
       }
 
+      await refreshProfile();
       setIsEditing(false);
+      setShowDeliveryForm(false);
+
+      if (redirectAfterSave) {
+        navigate(redirectAfterSave, { replace: true });
+      }
     } catch (error: any) {
       console.error("Failed to update profile:", error);
-      if (error.code === "auth/requires-recent-login") {
-        setErrorMsg("Please sign out and sign back in to change your email.");
-      } else {
-        setErrorMsg("Failed to save. Please try again.");
-      }
+      setErrorMsg(error?.message || "Failed to save profile. Please check all required fields.");
     } finally {
       setIsSaving(false);
     }
@@ -328,6 +358,7 @@ export default function Account() {
       )}
 
       {/* Stage Container */}
+      {!(needsSetup || showDeliveryForm) && (
       <div className="relative w-full max-w-[360px] h-[680px]">
         {/* 1. TOP RECTANGULAR SILVER CLIP & SPLIT O-RING (From your reference image) */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
@@ -738,11 +769,11 @@ export default function Account() {
                     ) : (
                       <>
                         <span className="font-handwritten text-3xl leading-none text-espresso/90 absolute left-20 bottom-1 -rotate-2 truncate max-w-[130px]">
-                          {firebaseUser?.displayName || "Guest"}
+                          {profile?.name || firebaseUser?.displayName || "Guest"}
                         </span>
                         <button
-                          onClick={() => setIsEditing(true)}
-                          className="absolute right-0 bottom-1 z-20 flex items-center gap-1 text-[9px] uppercase tracking-widest font-bold bg-espresso/5 border border-espresso/10 text-espresso/60 px-2 py-1 rounded-md hover:bg-cola-red hover:text-cream hover:border-cola-red transition-all shadow-sm"
+                          onClick={() => setShowDeliveryForm(true)}
+                          className="absolute right-0 bottom-1 z-20 flex items-center gap-1 text-[9px] uppercase tracking-widest font-bold bg-espresso/5 border border-espresso/10 text-espresso/60 px-2 py-1 rounded-md hover:bg-cola-red hover:text-cream hover:border-cola-red transition-all shadow-sm cursor-pointer"
                         >
                           <Edit2 size={10} /> Edit
                         </button>
@@ -764,7 +795,7 @@ export default function Account() {
                       />
                     ) : (
                       <span className="font-handwritten text-2xl leading-none text-espresso/90 absolute left-20 bottom-1 truncate max-w-[160px]">
-                        {firebaseUser?.email || "Unknown"}
+                        {profile?.email || firebaseUser?.email || "Unknown"}
                       </span>
                     )}
                   </div>
@@ -803,7 +834,7 @@ export default function Account() {
                       <X size={16} />
                     </button>
                     <button
-                      onClick={handleSaveProfile}
+                      onClick={() => handleSaveProfile()}
                       disabled={isSaving}
                       className="bg-cola-red text-cream p-2 rounded-md hover:bg-cola-red-dark transition-colors shadow-sm"
                     >
@@ -825,6 +856,205 @@ export default function Account() {
           </div>
         </div>
       </div>
+      )}
+
+      {/* ONE-TIME PROFILE SETUP / EDIT DELIVERY PROFILE FORM */}
+      {(needsSetup || showDeliveryForm) ? (
+        <motion.form
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          onSubmit={handleSaveProfile}
+          className="w-full max-w-md mt-8 bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_6px_0_#1e1a18] rounded-3xl p-6 sm:p-7 text-espresso z-40"
+        >
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <span className="inline-block text-[10px] font-bold uppercase tracking-[0.2em] text-cola-red mb-1">
+                {needsSetup ? "One-Time Setup Required" : "Update Profile"}
+              </span>
+              <h2 className="font-display text-2xl text-espresso">
+                {needsSetup ? "Complete Your Profile" : "Collector & Delivery Details"}
+              </h2>
+              <p className="text-xs text-espresso/65 mt-1">
+                {redirectAfterSave === "/checkout"
+                  ? "Fill in your profile once to print your order receipt and dispatch your charms."
+                  : "Save your contact and shipping details once so checkout is instant."}
+              </p>
+            </div>
+            {!needsSetup && (
+              <button
+                type="button"
+                onClick={() => setShowDeliveryForm(false)}
+                className="w-8 h-8 rounded-full bg-white border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] flex items-center justify-center text-espresso hover:text-cola-red cursor-pointer shrink-0"
+              >
+                <X size={15} />
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3.5">
+            <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wider text-espresso/70">
+              Full Name *
+              <input
+                required
+                type="text"
+                placeholder="Your full name"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-[#1e1a18] text-sm font-semibold text-espresso focus:outline-none focus:border-cola-red"
+              />
+            </label>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wider text-espresso/70">
+                Email Address *
+                <input
+                  required
+                  type="email"
+                  placeholder="you@example.com"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-[#1e1a18] text-sm font-semibold text-espresso focus:outline-none focus:border-cola-red"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wider text-espresso/70">
+                Phone Number *
+                <input
+                  required
+                  type="tel"
+                  placeholder="+91 98765 43210"
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-[#1e1a18] text-sm font-semibold text-espresso focus:outline-none focus:border-cola-red"
+                />
+              </label>
+            </div>
+
+            <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wider text-espresso/70">
+              Street Address / Flat / Building *
+              <input
+                required
+                type="text"
+                placeholder="House/Flat No., Building, Street, Area"
+                value={newAddress}
+                onChange={(e) => setNewAddress(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-[#1e1a18] text-sm font-semibold text-espresso focus:outline-none focus:border-cola-red"
+              />
+            </label>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wider text-espresso/70">
+                City *
+                <input
+                  required
+                  type="text"
+                  placeholder="Mumbai"
+                  value={newCity}
+                  onChange={(e) => setNewCity(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-[#1e1a18] text-sm font-semibold text-espresso focus:outline-none focus:border-cola-red"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wider text-espresso/70">
+                State
+                <input
+                  type="text"
+                  placeholder="Maharashtra"
+                  value={newState}
+                  onChange={(e) => setNewState(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-[#1e1a18] text-sm font-semibold text-espresso focus:outline-none focus:border-cola-red"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wider text-espresso/70">
+                Pincode *
+                <input
+                  required
+                  type="text"
+                  placeholder="400001"
+                  value={newPincode}
+                  onChange={(e) => setNewPincode(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-[#1e1a18] text-sm font-semibold text-espresso focus:outline-none focus:border-cola-red"
+                />
+              </label>
+            </div>
+
+            <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wider text-espresso/70">
+              Collector Rank
+              <select
+                value={statusRank}
+                onChange={(e) => setStatusRank(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-[#1e1a18] text-sm font-semibold text-espresso focus:outline-none focus:border-cola-red cursor-pointer"
+              >
+                {RANK_OPTIONS.map((rank) => (
+                  <option key={rank} value={rank}>
+                    {rank}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="mt-2 w-full py-3.5 px-5 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_4px_0_#1e1a18] active:translate-y-0.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider hover:bg-[#b81d1d] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {isSaving
+                ? "Saving Profile…"
+                : redirectAfterSave === "/checkout"
+                  ? "Save Profile & Print Order Receipt →"
+                  : "Save Collector Profile"}
+            </button>
+          </div>
+        </motion.form>
+      ) : (
+        profile && (
+          <div className="w-full max-w-sm mt-4 bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_4px_0_#1e1a18] rounded-2xl p-4 text-espresso z-30">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-espresso/70">
+                Saved Delivery Profile
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowDeliveryForm(true)}
+                className="text-xs font-bold text-cola-red hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <Edit2 size={12} /> Edit
+              </button>
+            </div>
+            <div className="text-xs text-espresso/80 space-y-1">
+              {profile.phone && (
+                <p className="flex items-center gap-1.5">
+                  <Phone size={12} className="text-cola-red shrink-0" /> {profile.phone}
+                </p>
+              )}
+              {profile.email && (
+                <p className="flex items-center gap-1.5">
+                  <Mail size={12} className="text-cola-red shrink-0" /> {profile.email}
+                </p>
+              )}
+              {profile.address && (
+                <p className="flex items-start gap-1.5">
+                  <MapPin size={12} className="text-cola-red shrink-0 mt-0.5" />
+                  <span>
+                    {profile.address}, {profile.city}
+                    {profile.state ? `, ${profile.state}` : ""} — {profile.pincode}
+                  </span>
+                </p>
+              )}
+            </div>
+            {redirectAfterSave === "/checkout" && (
+              <button
+                type="button"
+                onClick={() => navigate("/checkout")}
+                className="mt-3 w-full py-2.5 px-4 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-xs font-extrabold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                Continue to Checkout <ArrowRight size={14} />
+              </button>
+            )}
+          </div>
+        )
+      )}
 
       <motion.button
         initial={{ opacity: 0 }}
@@ -832,7 +1062,7 @@ export default function Account() {
         transition={{ delay: 0.5 }}
         onClick={handleLogOut}
         disabled={isLoggingOut}
-        className="mt-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-cola-red hover:text-espresso transition-colors disabled:opacity-50"
+        className="mt-6 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-cola-red hover:text-espresso transition-colors disabled:opacity-50 cursor-pointer"
       >
         <LogOut size={16} />
         {isLoggingOut ? "Signing out..." : "Sign Out"}

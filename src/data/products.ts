@@ -1,4 +1,4 @@
-export type Category = "Bag Charms" | "Carabiners" | "Phone Charms" | "Chains & Necklaces" | "Charm Tins";
+export type Category = "Bag Charms" | "Carabiners" | "Phone Charms" | "Chains & Necklaces" | "Charm Tins" | (string & {});
 
 export interface Product {
   id: string;
@@ -18,6 +18,12 @@ export interface Product {
   // Extra named carousel photos (for products without options).
   gallery?: GalleryImage[];
   inStock?: boolean;
+  stockQuantity?: number | null;
+  sortOrder?: number;
+  deliveryMinDays?: number | null;
+  deliveryMaxDays?: number | null;
+  deliveryMinDate?: string | null;
+  deliveryMaxDate?: string | null;
 }
 
 // A zoomed-in view of the main photo: centre on (x, y) — fractions of the
@@ -236,8 +242,5 @@ export const products: Product[] = [
 
 export const categories: Category[] = [
   "Bag Charms",
-  "Carabiners",
-  "Phone Charms",
-  "Chains & Necklaces",
   "Charm Tins",
 ];

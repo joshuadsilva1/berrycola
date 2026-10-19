@@ -32,14 +32,14 @@ export default function Footer() {
             <a
               href="#"
               aria-label="Instagram"
-              className="w-9 h-9 rounded-full border border-cream/20 flex items-center justify-center hover:bg-cola-red hover:border-cola-red transition-colors"
+              className="w-9 h-9 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 flex items-center justify-center text-espresso hover:text-cola-red transition-all"
             >
               <SocialIcon path={INSTAGRAM} />
             </a>
             <a
               href="#"
               aria-label="TikTok"
-              className="w-9 h-9 rounded-full border border-cream/20 flex items-center justify-center hover:bg-cola-red hover:border-cola-red transition-colors"
+              className="w-9 h-9 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 flex items-center justify-center text-espresso hover:text-cola-red transition-all"
             >
               <SocialIcon path={TIKTOK} />
             </a>
@@ -51,8 +51,7 @@ export default function Footer() {
           <ul className="space-y-2.5 text-sm text-cream/80">
             <li><Link to="/shop" className="hover:text-cola-red transition-colors">All Charms</Link></li>
             <li><Link to="/shop?category=Bag+Charms" className="hover:text-cola-red transition-colors">Bag Charms</Link></li>
-            <li><Link to="/shop?category=Carabiners" className="hover:text-cola-red transition-colors">Carabiners</Link></li>
-            <li><Link to="/shop?category=Phone+Charms" className="hover:text-cola-red transition-colors">Phone Charms</Link></li>
+            <li><Link to="/shop?category=Charm+Tins" className="hover:text-cola-red transition-colors">Charm Tins</Link></li>
           </ul>
         </div>
 

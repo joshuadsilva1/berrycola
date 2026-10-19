@@ -18,7 +18,7 @@ export default function Contact() {
       await submitContact(form);
       setSent(true);
     } catch {
-      setFormError("Something went wrong sending your message — please try again.");
+      setFormError("Something went wrong sending your message, please try again.");
     } finally {
       setSending(false);
     }
@@ -31,7 +31,7 @@ export default function Contact() {
           <p className="text-xs uppercase tracking-[0.25em] text-cola-red font-semibold mb-4">Get in Touch</p>
           <h1 className="font-display text-4xl sm:text-5xl text-espresso">We'd love to hear from you</h1>
           <p className="text-espresso/60 mt-4 max-w-lg mx-auto">
-            Questions about an order, a collab idea, or just want to say hi —
+            Questions about an order, a collab idea, or just want to say hi, 
             drop us a line.
           </p>
         </Reveal>
@@ -39,8 +39,8 @@ export default function Contact() {
         <div className="grid md:grid-cols-5 gap-12">
           <Reveal className="md:col-span-2 flex flex-col gap-8">
             <div className="flex gap-4">
-              <div className="w-11 h-11 rounded-full bg-[#f7f0ec] flex items-center justify-center shrink-0">
-                <Mail size={18} className="text-cola-red" />
+              <div className="w-11 h-11 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] flex items-center justify-center text-espresso hover:text-cola-red transition-all shrink-0">
+                <Mail size={18} />
               </div>
               <div>
                 <h3 className="font-display text-espresso">Email</h3>
@@ -48,8 +48,8 @@ export default function Contact() {
               </div>
             </div>
             <div className="flex gap-4">
-              <div className="w-11 h-11 rounded-full bg-[#f7f0ec] flex items-center justify-center shrink-0">
-                <MapPin size={18} className="text-cola-red" />
+              <div className="w-11 h-11 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] flex items-center justify-center text-espresso hover:text-cola-red transition-all shrink-0">
+                <MapPin size={18} />
               </div>
               <div>
                 <h3 className="font-display text-espresso">Studio</h3>
@@ -57,8 +57,8 @@ export default function Contact() {
               </div>
             </div>
             <div className="flex gap-4">
-              <div className="w-11 h-11 rounded-full bg-[#f7f0ec] flex items-center justify-center shrink-0">
-                <AtSign size={18} className="text-cola-red" />
+              <div className="w-11 h-11 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] flex items-center justify-center text-espresso hover:text-cola-red transition-all shrink-0">
+                <AtSign size={18} />
               </div>
               <div>
                 <h3 className="font-display text-espresso">Instagram</h3>
@@ -72,20 +72,20 @@ export default function Contact() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="rounded-3xl bg-[#f7f0ec] p-10 text-center"
+                className="rounded-3xl bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_5px_0_#1e1a18] p-10 text-center"
               >
                 <h3 className="font-display text-2xl text-espresso mb-2">Message sent!</h3>
-                <p className="text-espresso/60">We'll get back to you within 1–2 business days.</p>
+                <p className="text-espresso/65">We'll get back to you within 1–2 business days.</p>
               </motion.div>
             ) : (
-              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+              <form onSubmit={handleSubmit} className="flex flex-col gap-5 bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_5px_0_#1e1a18] rounded-3xl p-6 sm:p-8">
                 <div className="grid sm:grid-cols-2 gap-5">
                   <input
                     required
                     placeholder="Name"
                     value={form.name}
                     onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                    className="border border-espresso/15 rounded-2xl px-5 py-3.5 focus:outline-none focus:border-cola-red bg-cream"
+                    className="border-2 border-[#1e1a18] rounded-2xl px-5 py-3.5 focus:outline-none bg-white text-espresso"
                   />
                   <input
                     required
@@ -93,14 +93,14 @@ export default function Contact() {
                     placeholder="Email"
                     value={form.email}
                     onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                    className="border border-espresso/15 rounded-2xl px-5 py-3.5 focus:outline-none focus:border-cola-red bg-cream"
+                    className="border-2 border-[#1e1a18] rounded-2xl px-5 py-3.5 focus:outline-none bg-white text-espresso"
                   />
                 </div>
                 <input
                   placeholder="Subject"
                   value={form.subject}
                   onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
-                  className="border border-espresso/15 rounded-2xl px-5 py-3.5 focus:outline-none focus:border-cola-red bg-cream"
+                  className="border-2 border-[#1e1a18] rounded-2xl px-5 py-3.5 focus:outline-none bg-white text-espresso"
                 />
                 <textarea
                   required
@@ -108,13 +108,13 @@ export default function Contact() {
                   placeholder="Your message"
                   value={form.message}
                   onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-                  className="border border-espresso/15 rounded-2xl px-5 py-3.5 focus:outline-none focus:border-cola-red bg-cream resize-none"
+                  className="border-2 border-[#1e1a18] rounded-2xl px-5 py-3.5 focus:outline-none bg-white text-espresso resize-none"
                 />
                 {formError && <p className="text-cola-red text-sm">{formError}</p>}
                 <motion.button
-                  whileTap={{ scale: 0.97 }}
+                  whileTap={{ scale: 0.98 }}
                   disabled={sending}
-                  className="self-start bg-espresso text-cream px-8 py-3.5 rounded-full font-semibold tracking-wide hover:bg-cola-red transition-colors disabled:opacity-60"
+                  className="self-start bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_4px_0_#1e1a18] active:translate-y-0.5 px-8 py-3.5 rounded-full font-semibold tracking-wide hover:bg-[#b81d1d] transition-all disabled:opacity-60 cursor-pointer"
                 >
                   {sending ? "Sending…" : "Send Message"}
                 </motion.button>

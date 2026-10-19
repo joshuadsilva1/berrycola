@@ -4,7 +4,7 @@ import { inr } from "../../components/admin/charts";
 import { fetchCustomers, type AdminCustomer } from "../../lib/api";
 
 const date = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "—";
+  iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : ", ";
 
 export default function AdminCustomers() {
   const [customers, setCustomers] = useState<AdminCustomer[]>([]);
@@ -60,7 +60,7 @@ export default function AdminCustomers() {
                 <tr key={c.id} className="hover:bg-espresso/3">
                   <td className="px-4 py-3">
                     <span className="block text-espresso">
-                      {c.name ?? "—"}
+                      {c.name ?? ", "}
                       {c.isAdmin && (
                         <span className="ml-2 text-[10px] font-semibold uppercase text-cola-red bg-cola-red/10 px-2 py-0.5 rounded-full">
                           Admin
@@ -69,7 +69,7 @@ export default function AdminCustomers() {
                     </span>
                     <span className="block text-xs text-espresso/50">{c.email ?? ""}</span>
                   </td>
-                  <td className="px-4 py-3 text-espresso/70">{c.phone ?? "—"}</td>
+                  <td className="px-4 py-3 text-espresso/70">{c.phone ?? ", "}</td>
                   <td className="px-4 py-3 text-espresso/70">{date(c.joinedAt)}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{c.orders}</td>
                   <td className="px-4 py-3 text-right tabular-nums font-semibold">{inr(c.spend)}</td>

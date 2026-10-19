@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Plus, Minus, Trash2, Volume2, VolumeX } from "lucide-react";
+import { X, Plus, Minus, Trash2, Volume2, VolumeX, Printer, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { useAuth, isProfileComplete } from "../context/AuthContext";
+import { variantPrice } from "../data/products";
 
 const PAPER_TEXTURE = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.06'/%3E%3C/svg%3E")`;
 
@@ -19,16 +21,17 @@ const KEY_ROW_4 = [96, 134, 172, 210, 248, 286, 324, 362, 400, 438, 474];
 
 export default function CartDrawer() {
   const cart = useCart() as any;
+  const { firebaseUser, profile } = useAuth();
   const navigate = useNavigate();
   const [muted, setMuted] = useState(false);
   const [typedSubtitle, setTypedSubtitle] = useState("");
   const [pressedKey, setPressedKey] = useState<string | null>(null);
   const fullSubtitle = "old memory of new charms ....";
 
-  // Flexible bindings to support your CartContext structure
+  // Flexible bindings to support CartContext structure (lines)
   const isOpen: boolean = cart.isOpen ?? cart.isCartOpen ?? cart.open ?? false;
   const closeCart: () => void = cart.closeCart ?? cart.onClose ?? (() => cart.setIsOpen?.(false));
-  const rawItems: any[] = cart.items ?? cart.cartItems ?? [];
+  const rawItems: any[] = cart.lines ?? cart.items ?? cart.cartItems ?? [];
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const keyAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -164,8 +167,8 @@ export default function CartDrawer() {
 
   const handleQtyChange = (item: any, delta: number) => {
     playTypewriterKey();
-    const id = item.product?.id ?? item.id;
-    const currentQty = item.quantity ?? item.qty ?? 1;
+    const key = item.key ?? item.product?.id ?? item.id;
+    const currentQty = item.qty ?? item.quantity ?? 1;
     const nextQty = currentQty + delta;
 
     if (nextQty <= 0) {
@@ -173,36 +176,46 @@ export default function CartDrawer() {
       return;
     }
 
-    if (cart.updateQuantity) cart.updateQuantity(id, nextQty);
-    else if (cart.updateQty) cart.updateQty(id, nextQty);
-    else if (delta > 0 && cart.addItem) cart.addItem(item.product ?? item, 1);
-    else if (delta > 0 && cart.addToCart) cart.addToCart(item.product ?? item, 1);
-    else if (delta < 0 && cart.decrementItem) cart.decrementItem(id);
+    if (cart.setQty) cart.setQty(key, nextQty);
+    else if (cart.updateQuantity) cart.updateQuantity(key, nextQty);
+    else if (cart.updateQty) cart.updateQty(key, nextQty);
+    else if (delta > 0 && cart.addItem) cart.addItem(item.product ?? item, item.variant ?? null, 1);
   };
 
   const handleRemove = (item: any) => {
     playCarriageBell();
-    const id = item.product?.id ?? item.id;
-    if (cart.removeItem) cart.removeItem(id);
-    else if (cart.removeFromCart) cart.removeFromCart(id);
+    const key = item.key ?? item.product?.id ?? item.id;
+    if (cart.removeItem) cart.removeItem(key);
+    else if (cart.removeFromCart) cart.removeFromCart(key);
   };
 
   const handleCheckout = () => {
     if (rawItems.length === 0) {
       playTypewriterKey("space");
+      closeCart();
+      navigate("/shop");
       return;
     }
     playCarriageBell();
     closeCart();
-    navigate("/shop");
+    if (!firebaseUser) {
+      navigate("/login", { state: { from: "/checkout" } });
+      return;
+    }
+    if (!isProfileComplete(profile)) {
+      navigate("/account", { state: { from: "/checkout" } });
+      return;
+    }
+    navigate("/checkout");
   };
 
   const subtotal =
     cart.subtotal ??
     cart.total ??
     rawItems.reduce((sum: number, item: any) => {
-      const price = item.product?.price ?? item.price ?? 0;
-      const qty = item.quantity ?? item.qty ?? 1;
+      const product = item.product ?? item;
+      const price = product ? variantPrice(product, item.variant) : (item.price ?? 0);
+      const qty = item.qty ?? item.quantity ?? 1;
       return sum + price * qty;
     }, 0);
 
@@ -329,15 +342,20 @@ export default function CartDrawer() {
                 ) : (
                   rawItems.map((item: any, idx: number) => {
                     const product = item.product ?? item;
-                    const id = product.id ?? idx;
+                    const key = item.key ?? product.id ?? idx;
                     const name = product.name ?? product.title ?? "BerryCola Charm";
-                    const price = product.price ?? 0;
-                    const qty = item.quantity ?? item.qty ?? 1;
-                    const image = product.image ?? product.images?.[0];
+                    const variantLabel = item.variant?.label;
+                    const price = product ? variantPrice(product, item.variant) : (item.price ?? 0);
+                    const qty = item.qty ?? item.quantity ?? 1;
+                    const image =
+                      item.variant?.imageUrl ??
+                      product.imageUrl ??
+                      product.image ??
+                      product.images?.[0];
 
                     return (
                       <motion.div
-                        key={id}
+                        key={key}
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: idx * 0.05 }}
@@ -362,7 +380,7 @@ export default function CartDrawer() {
                           </div>
 
                           <p className="text-[10px] text-espresso/65">
-                            unit: ₹{price.toLocaleString("en-IN")}
+                            {variantLabel ? `${variantLabel} · ` : ""}unit: ₹{price.toLocaleString("en-IN")}
                           </p>
 
                           <div className="flex items-center justify-between mt-1.5">
@@ -409,13 +427,29 @@ export default function CartDrawer() {
 
                 <div className="text-[11px] tracking-tight text-espresso/90 pb-1 border-b border-dotted border-espresso/80 flex justify-between">
                   <span>berrycola studio</span>
-                  <span>items: {rawItems.length}</span>
+                  <span>items: {cart.count ?? rawItems.length}</span>
                 </div>
 
-                <div className="text-[11px] tracking-tight text-espresso/85 mt-1.5 min-h-[16px]">
-                  {typedSubtitle}
-                  <span className="animate-pulse">_</span>
-                </div>
+                {rawItems.length > 0 ? (
+                  <button
+                    onClick={handleCheckout}
+                    className="mt-2.5 w-full py-2.5 px-3 rounded-lg bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] hover:bg-[#b81d1d] active:translate-y-0.5 transition-all flex items-center justify-between gap-2 font-sans font-extrabold text-xs uppercase tracking-wider cursor-pointer"
+                  >
+                    <span className="inline-flex items-center gap-1.5">
+                      <Printer size={14} className="shrink-0" />
+                      Print Receipt & Checkout
+                    </span>
+                    <span className="inline-flex items-center gap-1 bg-[#1e1a18]/20 px-2 py-0.5 rounded text-[11px]">
+                      ₹{subtotal.toLocaleString("en-IN")}
+                      <ArrowRight size={13} />
+                    </span>
+                  </button>
+                ) : (
+                  <div className="text-[11px] tracking-tight text-espresso/85 mt-1.5 min-h-[16px]">
+                    {typedSubtitle}
+                    <span className="animate-pulse">_</span>
+                  </div>
+                )}
               </div>
             </motion.div>
 
@@ -670,27 +704,27 @@ export default function CartDrawer() {
                 <g
                   onClick={handleCheckout}
                   className={`cursor-pointer transition-transform ${
-                    rawItems.length === 0 ? "opacity-75" : "hover:brightness-105"
+                    rawItems.length === 0 ? "opacity-75" : "hover:brightness-105 active:translate-y-0.5"
                   }`}
                 >
                   {/* Spacebar 3D lower lip */}
                   <rect
-                    x="166"
-                    y="268"
-                    width="268"
-                    height="24"
-                    rx="8"
-                    fill="#dfd3be"
+                    x="136"
+                    y="264"
+                    width="328"
+                    height="28"
+                    rx="9"
+                    fill={rawItems.length > 0 ? "#8f1414" : "#dfd3be"}
                     stroke="#1e1a18"
                     strokeWidth="2.5"
                   />
-                  {/* Spacebar top cream surface */}
+                  {/* Spacebar top surface */}
                   <rect
-                    x="166"
-                    y="260"
-                    width="268"
-                    height="18"
-                    rx="7"
+                    x="136"
+                    y="255"
+                    width="328"
+                    height="24"
+                    rx="8"
                     fill="#fbf5e9"
                     stroke="#1e1a18"
                     strokeWidth="2.5"
@@ -698,13 +732,13 @@ export default function CartDrawer() {
                   {/* Spacebar Action Label */}
                   <text
                     x="300"
-                    y="273"
+                    y="271"
                     textAnchor="middle"
-                    className="font-typewriter text-[11px] font-bold uppercase tracking-[0.2em] fill-[#1e1a18]"
+                    className="font-typewriter text-[13px] font-bold uppercase tracking-[0.18em] fill-[#1e1a18]"
                   >
                     {rawItems.length > 0
-                      ? `PRINT ORDER · ₹${subtotal.toLocaleString("en-IN")}`
-                      : "KEEP BROWSING"}
+                      ? `CHECKOUT · PRINT ORDER →`
+                      : "KEEP BROWSING →"}
                   </text>
                 </g>
               </svg>

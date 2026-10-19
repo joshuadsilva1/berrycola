@@ -31,7 +31,7 @@ export default function About() {
 
       <section className="mx-auto max-w-3xl px-6">
         <Reveal>
-          <div className="rounded-[2rem] overflow-hidden shadow-xl">
+          <div className="rounded-[2rem] overflow-hidden border-2 border-[#1e1a18] shadow-[0_6px_0_#1e1a18]">
             <img
               src="/products/bottle-cap-charm.jpg"
               alt="BerryCola bottle cap charm on denim"
@@ -43,19 +43,19 @@ export default function About() {
 
       <section className="mx-auto max-w-5xl px-6 py-10 grid sm:grid-cols-2 gap-8">
         <Reveal>
-          <div className="rounded-3xl bg-[#f7f0ec] p-10 h-full">
+          <div className="rounded-3xl bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_5px_0_#1e1a18] p-10 h-full">
             <h2 className="font-display text-2xl text-espresso mb-4">What we believe</h2>
-            <p className="text-espresso/65 leading-relaxed">
+            <p className="text-espresso/70 leading-relaxed">
               Jewelry should be playful, not precious. Every Berry Cola charm is
-              designed to be mixed, matched, and worn without ceremony — on a
+              designed to be mixed, matched, and worn without ceremony, on a
               bag, a belt loop, or a keychain if that's your thing.
             </p>
           </div>
         </Reveal>
         <Reveal delay={0.1}>
-          <div className="rounded-3xl bg-espresso p-10 h-full">
+          <div className="rounded-3xl bg-espresso border-2 border-[#1e1a18] shadow-[0_5px_0_#1e1a18] p-10 h-full">
             <h2 className="font-display text-2xl text-cream mb-4">How we make it</h2>
-            <p className="text-cream/65 leading-relaxed">
+            <p className="text-cream/70 leading-relaxed">
               Every charm goes through five hands before it ships: design, wax
               casting, hand enamelling, polishing, and a final quality check.
               Nothing goes out that we wouldn't wear ourselves.
@@ -64,7 +64,7 @@ export default function About() {
         </Reveal>
       </section>
 
-      <section className="bg-espresso py-24 my-16">
+      <section className="bg-espresso border-y-2 border-[#1e1a18] py-24 my-16">
         <div className="mx-auto max-w-5xl px-6 grid grid-cols-2 sm:grid-cols-4 gap-8">
           <StatCounter value={52} suffix="K+" label="Charms Shipped" />
           <StatCounter value={4.9} suffix="/5" label="Average Rating" decimals={1} />
@@ -77,13 +77,13 @@ export default function About() {
         <Reveal className="text-center mb-16">
           <h2 className="font-display text-3xl sm:text-4xl text-espresso">How we got here</h2>
         </Reveal>
-        <div className="relative border-l-2 border-espresso/10 pl-8 flex flex-col gap-14">
+        <div className="relative border-l-2 border-[#1e1a18]/25 pl-8 flex flex-col gap-14">
           {timeline.map((t, i) => (
             <Reveal key={t.year} delay={i * 0.08} className="relative">
-              <span className="absolute -left-[41px] top-1 w-4 h-4 rounded-full bg-cola-red border-4 border-cream" />
+              <span className="absolute -left-[41px] top-1 w-4 h-4 rounded-full bg-cola-red border-2 border-[#1e1a18]" />
               <span className="text-xs uppercase tracking-[0.2em] text-cola-red font-semibold">{t.year}</span>
               <h3 className="font-display text-xl text-espresso mt-1.5 mb-2">{t.title}</h3>
-              <p className="text-espresso/60">{t.copy}</p>
+              <p className="text-espresso/65">{t.copy}</p>
             </Reveal>
           ))}
         </div>
@@ -111,7 +111,7 @@ export default function About() {
           </h2>
           <Link
             to="/shop"
-            className="inline-flex items-center gap-2 bg-cola-red text-cream px-8 py-4 rounded-full font-semibold tracking-wide hover:bg-cola-red-dark transition-colors"
+            className="inline-flex items-center gap-2 bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_4px_0_#1e1a18] active:translate-y-0.5 px-8 py-3.5 rounded-full font-semibold tracking-wide hover:bg-[#b81d1d] transition-all"
           >
             Shop All Charms <ArrowRight size={16} />
           </Link>

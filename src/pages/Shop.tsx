@@ -1,12 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { LayoutGrid } from "lucide-react";
 import ProductCard from "../components/ProductCard";
 import Reveal from "../components/Reveal";
-import { CategoryShape } from "../components/CategoryShapes";
-import { categories, type Category } from "../data/products";
+import { getCategoryIconComponent } from "../components/CategoryShapes";
+import { categories as defaultCategories, type Category } from "../data/products";
 import { useProducts } from "../hooks/useCatalog";
+import { fetchStorefront, type StorefrontSettings } from "../lib/api";
 import { track } from "../lib/analytics";
 
 export default function Shop() {
@@ -15,12 +16,27 @@ export default function Shop() {
   const [sort, setSort] = useState<"featured" | "price-asc" | "price-desc">("featured");
   const { data: products, loading, error } = useProducts(activeCategory);
 
+  const [storefront, setStorefront] = useState<StorefrontSettings | null>(null);
+
+  useEffect(() => {
+    fetchStorefront().then(setStorefront).catch(console.error);
+  }, []);
+
+  // Only show the categories allowed by the admin in Storefront (defaults to Bag Charms & Charm Tins).
+  const allowedCategories = useMemo(() => {
+    if (storefront && storefront.trendingCategories.length > 0) {
+      return storefront.trendingCategories;
+    }
+    return defaultCategories;
+  }, [storefront]);
+
   const filtered = useMemo(() => {
-    let list = products ?? [];
+    const allowedSet = new Set(allowedCategories);
+    let list = (products ?? []).filter((p) => !activeCategory ? allowedSet.has(p.category) || listAllFallback(products ?? [], allowedSet) : true);
     if (sort === "price-asc") list = [...list].sort((a, b) => a.price - b.price);
     if (sort === "price-desc") list = [...list].sort((a, b) => b.price - a.price);
     return list;
-  }, [products, sort]);
+  }, [products, sort, activeCategory, allowedCategories]);
 
   const setCategory = (cat: Category | null) => {
     track("shop_filter", { props: { category: cat ?? "All" } });
@@ -43,46 +59,84 @@ export default function Shop() {
         </Reveal>
 
         <div className="flex flex-wrap items-end justify-between gap-6 mb-10">
-          <div className="flex flex-wrap gap-5">
+          <div className="flex flex-wrap items-end gap-5">
             <button onClick={() => setCategory(null)} className="group flex flex-col items-center gap-2">
               <span
-                className={`flex items-center justify-center w-14 h-14 rounded-full border transition-all ${
+                className={`flex items-center justify-center w-14 h-14 rounded-full border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] group-active:translate-y-0.5 transition-all ${
                   !activeCategory
-                    ? "bg-espresso border-espresso text-cream scale-110"
-                    : "border-espresso/15 text-espresso/50 group-hover:border-espresso/40 group-hover:text-espresso/80"
+                    ? "bg-cola-red text-[#fbf5e9] scale-105"
+                    : "bg-[#fbf5e9] text-espresso group-hover:text-cola-red"
                 }`}
               >
                 <LayoutGrid size={20} />
               </span>
-              <span className={`text-xs font-medium ${!activeCategory ? "text-espresso" : "text-espresso/50"}`}>
+              <span className={`text-xs font-semibold ${!activeCategory ? "text-espresso" : "text-espresso/60"}`}>
                 All
               </span>
             </button>
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setCategory(cat)}
-                className="group flex flex-col items-center gap-2"
-              >
-                <motion.span
-                  className="flex items-center justify-center"
-                  animate={{ scale: activeCategory === cat ? 1.12 : 1, opacity: activeCategory === cat ? 1 : 0.55 }}
-                  whileHover={{ opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+
+            {allowedCategories.map((cat) => {
+              const catVisual = storefront?.categoryImages?.[cat];
+              const Icon = getCategoryIconComponent(catVisual);
+              const isActive = activeCategory === cat;
+
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setCategory(cat)}
+                  className="group flex flex-col items-center gap-2"
                 >
-                  <CategoryShape category={cat} size={56} />
-                </motion.span>
-                <span className={`text-xs font-medium ${activeCategory === cat ? "text-espresso" : "text-espresso/50"}`}>
-                  {cat}
-                </span>
-              </button>
-            ))}
+                  {catVisual ? (
+                    Icon ? (
+                      <span
+                        className={`flex items-center justify-center w-14 h-14 rounded-full border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] group-active:translate-y-0.5 transition-all ${
+                          isActive
+                            ? "bg-cola-red text-[#fbf5e9] scale-105"
+                            : "bg-[#fbf5e9] text-espresso group-hover:text-cola-red"
+                        }`}
+                      >
+                        <Icon size={20} />
+                      </span>
+                    ) : (
+                      <span
+                        className={`flex items-center justify-center w-14 h-14 rounded-full border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] group-active:translate-y-0.5 transition-all p-2.5 ${
+                          isActive
+                            ? "bg-cola-red/15 scale-105"
+                            : "bg-[#fbf5e9] group-hover:bg-cream"
+                        }`}
+                      >
+                        <img
+                          src={catVisual}
+                          alt={cat}
+                          className="w-full h-full object-contain"
+                        />
+                      </span>
+                    )
+                  ) : null}
+                  <span
+                    className={`text-xs font-semibold transition-all ${
+                      !catVisual
+                        ? `px-4 py-2 rounded-full border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] group-active:translate-y-0.5 ${
+                            isActive
+                              ? "bg-cola-red text-[#fbf5e9]"
+                              : "bg-[#fbf5e9] text-espresso group-hover:text-cola-red"
+                          }`
+                        : isActive
+                          ? "text-espresso"
+                          : "text-espresso/60"
+                    }`}
+                  >
+                    {cat}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as typeof sort)}
-            className="text-sm border border-espresso/15 rounded-full px-4 py-2 bg-cream text-espresso/80 focus:outline-none focus:border-cola-red"
+            className="text-xs font-semibold uppercase tracking-wider rounded-full px-4 py-2.5 bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] text-espresso focus:outline-none hover:text-cola-red cursor-pointer transition-all"
           >
             <option value="featured">Featured</option>
             <option value="price-asc">Price: Low to High</option>
@@ -107,4 +161,8 @@ export default function Shop() {
       </div>
     </div>
   );
+}
+
+function listAllFallback(products: { category: string }[], allowedSet: Set<string>) {
+  return !products.some((p) => allowedSet.has(p.category));
 }

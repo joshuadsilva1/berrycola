@@ -38,17 +38,39 @@ export default function ProductGallery({
 
   const current = slides[index] ?? slides[0];
   const hasMultiple = slides.length > 1;
+  const [ratiosByUrl, setRatiosByUrl] = useState<Record<string, number>>({});
+
+  const activeRatio =
+    current.crop && current.crop.zoom > 1
+      ? 1
+      : ratiosByUrl[current.url] ?? 1;
 
   return (
     <div className="flex flex-col gap-4">
       <div
-        className="relative aspect-square rounded-[2rem] bg-gradient-to-br from-[#f7f0ec] to-[#efe2db] overflow-hidden"
+        className="relative w-full max-h-[680px] mx-auto rounded-[2rem] bg-gradient-to-br from-[#f7f0ec] to-[#efe2db] overflow-hidden transition-[aspect-ratio] duration-300"
+        style={{ aspectRatio: String(activeRatio) }}
         tabIndex={hasMultiple ? 0 : undefined}
         onKeyDown={(e) => {
           if (e.key === "ArrowLeft") goTo(index - 1);
           if (e.key === "ArrowRight") goTo(index + 1);
         }}
       >
+        <img
+          src={current.url}
+          alt=""
+          aria-hidden="true"
+          className="hidden"
+          onLoad={(e) => {
+            const img = e.currentTarget;
+            if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+              const r = Math.min(Math.max(img.naturalWidth / img.naturalHeight, 0.5), 2.0);
+              setRatiosByUrl((prev) =>
+                prev[current.url] === r ? prev : { ...prev, [current.url]: r },
+              );
+            }
+          }}
+        />
         <AnimatePresence initial={false} custom={direction} mode="popLayout">
           <motion.div
             key={index}
@@ -68,7 +90,7 @@ export default function ProductGallery({
             <ProductImage
               url={current.url}
               crop={current.crop}
-              alt={current.label ? `${alt} — ${current.label}` : alt}
+              alt={current.label ? `${alt} , ${current.label}` : alt}
             />
           </motion.div>
         </AnimatePresence>
@@ -78,14 +100,14 @@ export default function ProductGallery({
             <button
               onClick={() => goTo(index - 1)}
               aria-label="Previous image"
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-cream/85 text-espresso flex items-center justify-center hover:text-cola-red shadow-sm"
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-[calc(-50%+2px)] text-espresso flex items-center justify-center hover:text-cola-red transition-all"
             >
               <ChevronLeft size={18} />
             </button>
             <button
               onClick={() => goTo(index + 1)}
               aria-label="Next image"
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-cream/85 text-espresso flex items-center justify-center hover:text-cola-red shadow-sm"
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-[calc(-50%+2px)] text-espresso flex items-center justify-center hover:text-cola-red transition-all"
             >
               <ChevronRight size={18} />
             </button>

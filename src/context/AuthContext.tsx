@@ -25,18 +25,38 @@ export interface Profile {
   email: string | null;
   phone: string | null;
   name: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
+  profileCompleted?: boolean;
   isAdmin: boolean;
+}
+
+export function isProfileComplete(profile: Profile | null | undefined): boolean {
+  if (!profile) return false;
+  return Boolean(
+    profile.profileCompleted &&
+      profile.name?.trim() &&
+      profile.email?.trim() &&
+      profile.phone?.trim() &&
+      profile.address?.trim() &&
+      profile.city?.trim() &&
+      profile.pincode?.trim()
+  );
 }
 
 interface AuthContextValue {
   firebaseUser: FirebaseUser | null;
   profile: Profile | null;
+  user: Profile | null;
   loading: boolean;
   firebaseReady: boolean;
   signInWithGoogle: () => Promise<void>;
   startPhoneSignIn: (phoneNumber: string, recaptchaContainerId: string) => Promise<void>;
   confirmPhoneCode: (code: string) => Promise<void>;
   signOutUser: () => Promise<void>;
+  logOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -90,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       recaptchaRef.current?.clear();
     } catch {
-      // Already cleared, or its container left the page — nothing to clean up.
+      // Already cleared, or its container left the page, nothing to clean up.
     }
     recaptchaRef.current = null;
   };
@@ -136,12 +156,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         firebaseUser,
         profile,
+        user: profile,
         loading,
         firebaseReady,
         signInWithGoogle,
         startPhoneSignIn,
         confirmPhoneCode,
         signOutUser,
+        logOut: signOutUser,
         refreshProfile,
       }}
     >
