@@ -46,10 +46,10 @@ function PageViewTracker() {
   return null;
 }
 
+let introPlayedThisVisit = false;
+
 export default function App() {
-  const [showIntro, setShowIntro] = useState<boolean>(
-    () => !sessionStorage.getItem("bc-intro-seen") && !localStorage.getItem("bc-intro-seen")
-  );
+  const [showIntro, setShowIntro] = useState<boolean>(() => !introPlayedThisVisit);
 
   const unlockSound = () => {
     try {
@@ -71,24 +71,18 @@ export default function App() {
       // Ignore if AudioContext is unavailable
     }
     (window as any).__bcAudioUnlocked = true;
-    sessionStorage.setItem("bc-intro-seen", "1");
-    localStorage.setItem("bc-intro-seen", "1");
+    introPlayedThisVisit = true;
     window.dispatchEvent(new Event("bc-audio-unlocked"));
   };
 
   useEffect(() => {
-    // Passively unlock audio on first user gesture when intro was already seen
-    const handleFirstGesture = () => {
-      if (!(window as any).__bcAudioUnlocked) {
-        unlockSound();
-      }
-    };
-    window.addEventListener("pointerdown", handleFirstGesture, { once: true });
-    window.addEventListener("keydown", handleFirstGesture, { once: true });
-    return () => {
-      window.removeEventListener("pointerdown", handleFirstGesture);
-      window.removeEventListener("keydown", handleFirstGesture);
-    };
+    // Clean up any old persistent flags that hid the splash screen across refreshes
+    try {
+      localStorage.removeItem("bc-intro-seen");
+      sessionStorage.removeItem("bc-intro-seen");
+    } catch {
+      // Ignore storage errors
+    }
   }, []);
 
   useEffect(() => {
@@ -97,17 +91,15 @@ export default function App() {
     fetchStorefront()
       .then((data) => {
         if (data.splashEnabled === false) {
+          introPlayedThisVisit = true;
           setShowIntro(false);
-          sessionStorage.setItem("bc-intro-seen", "1");
-          localStorage.setItem("bc-intro-seen", "1");
         }
       })
       .catch((err) => console.error("Failed to load storefront config:", err));
   }, [showIntro]);
 
   const finishIntro = () => {
-    sessionStorage.setItem("bc-intro-seen", "1");
-    localStorage.setItem("bc-intro-seen", "1");
+    introPlayedThisVisit = true;
     setShowIntro(false);
   };
 

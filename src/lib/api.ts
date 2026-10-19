@@ -1,13 +1,42 @@
 import type { Category, Crop, Product } from "../data/products";
 import { auth } from "./firebase";
-import { analyticsHeaders } from "./analytics";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5001/api";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5001/api").replace(/\/+$/, "");
+
+export function resolveImageUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  const trimmed = url.trim();
+  if (!trimmed || trimmed.startsWith("icon:") || trimmed.startsWith("data:")) return trimmed;
+  const match = trimmed.match(/\/api\/uploads\/([^?#]+)/);
+  if (match?.[1]) {
+    return `${API_BASE}/uploads/${match[1]}`;
+  }
+  return trimmed;
+}
+
+function normalizeProduct(p: Product): Product {
+  return {
+    ...p,
+    imageUrl: resolveImageUrl(p.imageUrl),
+    variants: p.variants?.map((v) => ({
+      ...v,
+      imageUrl: resolveImageUrl(v.imageUrl) ?? null,
+    })),
+    gallery: p.gallery?.map((g) => ({
+      ...g,
+      imageUrl: resolveImageUrl(g.imageUrl) ?? null,
+    })),
+  };
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (init?.body) {
+    headers["Content-Type"] = "application/json";
+  }
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...analyticsHeaders(), ...init?.headers },
+    headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) },
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -30,13 +59,15 @@ async function authRequest<T>(path: string, init?: RequestInit): Promise<T> {
   });
 }
 
-export function fetchProducts(category?: Category | null): Promise<Product[]> {
+export async function fetchProducts(category?: Category | null): Promise<Product[]> {
   const query = category ? `?category=${encodeURIComponent(category)}` : "";
-  return request<Product[]>(`/products${query}`);
+  const list = await request<Product[]>(`/products${query}`);
+  return list.map(normalizeProduct);
 }
 
-export function fetchProduct(id: string): Promise<Product> {
-  return request<Product>(`/products/${id}`);
+export async function fetchProduct(id: string): Promise<Product> {
+  const item = await request<Product>(`/products/${id}`);
+  return normalizeProduct(item);
 }
 
 export function fetchCategories(): Promise<Category[]> {
@@ -214,22 +245,27 @@ export interface ImageInput {
   inStock?: boolean;
 }
 
-export function createProduct(payload: ProductInput) {
-  return authRequest<Product>("/admin/products", { method: "POST", body: JSON.stringify(payload) });
+export async function createProduct(payload: ProductInput) {
+  return normalizeProduct(
+    await authRequest<Product>("/admin/products", { method: "POST", body: JSON.stringify(payload) }),
+  );
 }
 
-export function updateProduct(id: string, payload: ProductInput) {
-  return authRequest<Product>(`/admin/products/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify(payload),
-  });
+export async function updateProduct(id: string, payload: ProductInput) {
+  return normalizeProduct(
+    await authRequest<Product>(`/admin/products/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  );
 }
 
-export function reorderProducts(orderedIds: string[]) {
-  return authRequest<Product[]>("/admin/products/reorder", {
+export async function reorderProducts(orderedIds: string[]) {
+  const list = await authRequest<Product[]>("/admin/products/reorder", {
     method: "POST",
     body: JSON.stringify({ orderedIds }),
   });
+  return list.map(normalizeProduct);
 }
 
 export function deleteProduct(id: string) {
@@ -471,17 +507,34 @@ export interface StorefrontSettings {
   productPageDetails?: ProductPageDetails;
 }
 
+function normalizeStorefront(s: StorefrontSettings): StorefrontSettings {
+  const categoryImages: Record<string, string> = {};
+  for (const [k, v] of Object.entries(s.categoryImages ?? {})) {
+    categoryImages[k] = resolveImageUrl(v) ?? v;
+  }
+  return {
+    ...s,
+    sliderSlides: (s.sliderSlides ?? []).map((slide) => ({
+      ...slide,
+      imageUrl: resolveImageUrl(slide.imageUrl) ?? slide.imageUrl,
+    })),
+    categoryImages,
+  };
+}
+
 // Public: Anyone can read the storefront settings (for the homepage)
-export function fetchStorefront() {
-  return request<StorefrontSettings>("/storefront");
+export async function fetchStorefront(): Promise<StorefrontSettings> {
+  const s = await request<StorefrontSettings>("/storefront");
+  return normalizeStorefront(s);
 }
 
 // Admin: Only admins can save storefront settings
-export function updateStorefront(payload: Partial<StorefrontSettings>) {
-  return authRequest<StorefrontSettings>("/admin/storefront", {
+export async function updateStorefront(payload: Partial<StorefrontSettings>): Promise<StorefrontSettings> {
+  const s = await authRequest<StorefrontSettings>("/admin/storefront", {
     method: "PATCH",
     body: JSON.stringify(payload),
   });
+  return normalizeStorefront(s);
 }
 
 

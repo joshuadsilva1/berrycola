@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, type Auth } from "firebase/auth";
+import { browserLocalPersistence, getAuth, setPersistence, type Auth } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -21,8 +21,14 @@ if (!firebaseReady) {
 // Only touch the Firebase SDK when real config is present — getAuth() throws
 // synchronously on an invalid/missing api key, which would otherwise crash
 // the whole app on load before Firebase is set up.
+function createFirebaseAuth(): Auth {
+  const authInstance = getAuth(initializeApp(firebaseConfig));
+  setPersistence(authInstance, browserLocalPersistence).catch(() => {});
+  return authInstance;
+}
+
 export const auth: Auth = firebaseReady
-  ? getAuth(initializeApp(firebaseConfig))
+  ? createFirebaseAuth()
   : (new Proxy(
       {},
       {
@@ -31,3 +37,4 @@ export const auth: Auth = firebaseReady
         },
       }
     ) as Auth);
+

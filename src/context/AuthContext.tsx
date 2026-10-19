@@ -61,10 +61,34 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const PROFILE_CACHE_KEY = "bc-auth-profile";
+
+function loadCachedProfile(): Profile | null {
+  try {
+    const raw = localStorage.getItem(PROFILE_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as Profile) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCachedProfile(profile: Profile | null) {
+  try {
+    if (profile) {
+      localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
+    } else {
+      localStorage.removeItem(PROFILE_CACHE_KEY);
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(() =>
+    firebaseReady ? auth.currentUser : null
+  );
+  const [profile, setProfile] = useState<Profile | null>(() => loadCachedProfile());
   const [loading, setLoading] = useState(true);
   const confirmationRef = useRef<ConfirmationResult | null>(null);
   const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
@@ -77,14 +101,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onIdTokenChanged(auth, async (user) => {
       setFirebaseUser(user);
       if (user) {
+        const cached = loadCachedProfile();
+        if (cached) {
+          setProfile(cached);
+        }
         try {
           const synced = (await syncSession()) as Profile;
           setProfile(synced);
+          saveCachedProfile(synced);
         } catch {
-          setProfile(null);
+          // Keep cached profile or build a fallback from Firebase user so login persists
+          // even during backend cold starts on Render.
+          const fallback: Profile = cached ?? {
+            id: user.uid,
+            email: user.email ?? null,
+            phone: user.phoneNumber ?? null,
+            name: user.displayName ?? null,
+            isAdmin: false,
+          };
+          setProfile(fallback);
         }
       } else {
         setProfile(null);
+        saveCachedProfile(null);
       }
       setLoading(false);
     });
@@ -99,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!firebaseUser) return;
     const me = (await fetchMe()) as Profile;
     setProfile(me);
+    saveCachedProfile(me);
   };
 
   const signInWithGoogle = async () => {
