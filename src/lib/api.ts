@@ -1,7 +1,7 @@
 import type { Category, Crop, Product } from "../data/products";
 import { auth } from "./firebase";
 
-const API_BASE = (import.meta.env.API_BASE_URL).replace(/\/+$/, "");
+const API_BASE = import.meta.env.API_BASE_URL;
 
 export function resolveImageUrl(url: string | null | undefined): string | undefined {
   if (!url) return undefined;
