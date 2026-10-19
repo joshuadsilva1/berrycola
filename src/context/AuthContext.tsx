@@ -58,6 +58,7 @@ interface AuthContextValue {
   signOutUser: () => Promise<void>;
   logOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  updateLocalProfile: (patch: Partial<Profile>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -84,6 +85,26 @@ function saveCachedProfile(profile: Profile | null) {
   }
 }
 
+function mergeProfile(server: Profile, cached: Profile | null): Profile {
+  if (!cached) return server;
+  const merged: Profile = {
+    ...cached,
+    ...server,
+    name: server.name || cached.name || null,
+    email: server.email || cached.email || null,
+    phone: server.phone || cached.phone || null,
+    address: server.address || cached.address || null,
+    city: server.city || cached.city || null,
+    state: server.state || cached.state || null,
+    pincode: server.pincode || cached.pincode || null,
+  };
+  merged.profileCompleted = Boolean(
+    server.profileCompleted ||
+      (merged.name && merged.email && merged.phone && merged.address && merged.city && merged.pincode)
+  );
+  return merged;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(() =>
     firebaseReady ? auth.currentUser : null
@@ -107,8 +128,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         try {
           const synced = (await syncSession()) as Profile;
-          setProfile(synced);
-          saveCachedProfile(synced);
+          const merged = mergeProfile(synced, cached);
+          setProfile(merged);
+          saveCachedProfile(merged);
         } catch {
           // Keep cached profile or build a fallback from Firebase user so login persists
           // even during backend cold starts on Render.
@@ -134,11 +156,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAnalyticsEnabled(!profile?.isAdmin);
   }, [profile]);
 
+  const updateLocalProfile = (patch: Partial<Profile>) => {
+    setProfile((prev) => {
+      const base: Profile = prev ?? {
+        id: firebaseUser?.uid ?? "local",
+        email: firebaseUser?.email ?? null,
+        phone: firebaseUser?.phoneNumber ?? null,
+        name: firebaseUser?.displayName ?? null,
+        isAdmin: false,
+      };
+      const next: Profile = { ...base, ...patch };
+      next.profileCompleted = Boolean(
+        next.name?.trim() &&
+          next.email?.trim() &&
+          next.phone?.trim() &&
+          next.address?.trim() &&
+          next.city?.trim() &&
+          next.pincode?.trim()
+      );
+      saveCachedProfile(next);
+      return next;
+    });
+  };
+
   const refreshProfile = async () => {
     if (!firebaseUser) return;
-    const me = (await fetchMe()) as Profile;
-    setProfile(me);
-    saveCachedProfile(me);
+    try {
+      const me = (await fetchMe()) as Profile;
+      const merged = mergeProfile(me, loadCachedProfile());
+      setProfile(merged);
+      saveCachedProfile(merged);
+    } catch {
+      // Keep current cached profile if server is unreachable
+    }
   };
 
   const signInWithGoogle = async () => {
@@ -205,6 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signOutUser,
         logOut: signOutUser,
         refreshProfile,
+        updateLocalProfile,
       }}
     >
       {children}

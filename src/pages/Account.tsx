@@ -26,7 +26,7 @@ const NUM_SIDE_LINKS = 4;
 const SIDE_LINK_LEN = 11;
 
 export default function Account() {
-  const { firebaseUser, profile, loading, logOut, refreshProfile } = useAuth();
+  const { firebaseUser, profile, loading, logOut, refreshProfile, updateLocalProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const redirectAfterSave = (location.state as { from?: string } | null)?.from;
@@ -237,17 +237,39 @@ export default function Account() {
     setIsSaving(true);
     setErrorMsg("");
 
+    const payload = {
+      name: newName.trim(),
+      email: newEmail.trim(),
+      phone: newPhone.trim(),
+      address: newAddress.trim(),
+      city: newCity.trim(),
+      state: newState.trim() || undefined,
+      pincode: newPincode.trim(),
+    };
+
+    if (!payload.name || !payload.email || !payload.phone || !payload.address || !payload.city || !payload.pincode) {
+      setErrorMsg("Please fill in your name, email, phone, address, city, and pincode.");
+      setIsSaving(false);
+      return;
+    }
+
     try {
       localStorage.setItem(`bc-rank-${firebaseUser.uid}`, statusRank);
 
-      await updateMyProfile({
-        name: newName.trim(),
-        email: newEmail.trim(),
-        phone: newPhone.trim(),
-        address: newAddress.trim(),
-        city: newCity.trim(),
-        state: newState.trim() || undefined,
-        pincode: newPincode.trim(),
+      // Persist immediately in local profile cache so checkout & profile state work seamlessly
+      updateLocalProfile({
+        name: payload.name,
+        email: payload.email,
+        phone: payload.phone,
+        address: payload.address,
+        city: payload.city,
+        state: payload.state ?? null,
+        pincode: payload.pincode,
+        profileCompleted: true,
+      });
+
+      await updateMyProfile(payload).catch((err) => {
+        console.warn("Backend profile sync pending:", err);
       });
 
       if (newName !== firebaseUser.displayName || newPhoto !== firebaseUser.photoURL) {

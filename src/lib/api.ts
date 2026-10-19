@@ -47,16 +47,33 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 async function authRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  if (!auth.currentUser && typeof (auth as any).authStateReady === "function") {
+    await (auth as any).authStateReady();
+  }
   const user = auth.currentUser;
   if (!user) throw new Error("You need to be signed in for that.");
   const idToken = await user.getIdToken();
-  return request<T>(path, {
-    ...init,
-    headers: {
-      ...(init?.headers ?? {}),
-      Authorization: `Bearer ${idToken}`,
-    },
-  });
+  try {
+    return await request<T>(path, {
+      ...init,
+      headers: {
+        ...(init?.headers ?? {}),
+        Authorization: `Bearer ${idToken}`,
+      },
+    });
+  } catch (err) {
+    if ((err as Error).message?.includes("401") || (err as Error).message?.toLowerCase().includes("expired")) {
+      const freshToken = await user.getIdToken(true);
+      return request<T>(path, {
+        ...init,
+        headers: {
+          ...(init?.headers ?? {}),
+          Authorization: `Bearer ${freshToken}`,
+        },
+      });
+    }
+    throw err;
+  }
 }
 
 export async function fetchProducts(category?: Category | null): Promise<Product[]> {
