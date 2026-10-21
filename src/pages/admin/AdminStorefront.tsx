@@ -113,7 +113,7 @@ export default function AdminStorefront() {
           <button
             onClick={handleSave}
             disabled={saving || uploadingUrl}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-[#b81d1d] text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-[#b81d1d] text-xs font-semibold uppercase  transition-all cursor-pointer disabled:opacity-50"
           >
             {savedToast ? <Check size={16} /> : <Save size={16} />}
             {saving ? "Saving..." : savedToast ? "Saved!" : "Save Changes"}
@@ -139,7 +139,7 @@ export default function AdminStorefront() {
               <div className="flex items-center gap-2.5">
                 <h2 className="font-display text-2xl text-espresso">"Coming Soon" Mode</h2>
                 <span
-                  className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full border-2 border-[#1e1a18] shadow-[0_1.5px_0_#1e1a18] ${
+                  className={`text-[10px] font-extrabold uppercase  px-2.5 py-0.5 rounded-full border-2 border-[#1e1a18] shadow-[0_1.5px_0_#1e1a18] ${
                     settings.comingSoon
                       ? "bg-cola-red text-white"
                       : "bg-emerald-100 text-emerald-900"
@@ -177,7 +177,7 @@ export default function AdminStorefront() {
             <button
               type="button"
               onClick={addSlide}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-espresso border-2 border-[#1e1a18] shadow-[0_2.5px_0_#1e1a18] active:translate-y-0.5 hover:text-cola-red text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-espresso border-2 border-[#1e1a18] shadow-[0_2.5px_0_#1e1a18] active:translate-y-0.5 hover:text-cola-red text-xs font-semibold uppercase  transition-all cursor-pointer"
             >
               <Plus size={14} /> Add Slide
             </button>
@@ -209,7 +209,7 @@ export default function AdminStorefront() {
                     ) : (
                       <div className="flex flex-col items-center gap-1 text-espresso/40">
                         <ImagePlus size={22} />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Upload</span>
+                        <span className="text-[10px] font-bold uppercase ">Upload</span>
                       </div>
                     )}
                     {uploadingUrl && !slide.imageUrl && (
@@ -241,7 +241,7 @@ export default function AdminStorefront() {
 
                 <div className="flex-1 w-full flex flex-col gap-3">
                   <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-espresso/70">Slide Heading / Badge</span>
+                    <span className="text-[10px] font-bold uppercase  text-espresso/70">Slide Heading / Badge</span>
                     <input
                       placeholder="e.g. Handmade Charm Tins"
                       value={slide.title}
@@ -250,7 +250,7 @@ export default function AdminStorefront() {
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-espresso/70">Target URL / Route</span>
+                    <span className="text-[10px] font-bold uppercase  text-espresso/70">Target URL / Route</span>
                     <input
                       placeholder="e.g. /shop?category=Charm+Tins"
                       value={slide.link}

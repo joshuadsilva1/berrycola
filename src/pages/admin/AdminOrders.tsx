@@ -158,6 +158,12 @@ function AdminOrderRow({
         ))}
       </ul>
 
+      {order.customerNote && (
+        <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-espresso">
+          <span className="font-semibold">Customer note:</span> {order.customerNote}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
         <select
           value={status}

@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Milk';
+  src: url('/fonts/Milk.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
   --color-cola-red: #d51f1f;
   --color-cola-red-dark: #a71414;
@@ -7,8 +15,10 @@
   --color-cream: #fffffe;
   --color-charcoal: #424240;
   --color-rose: #af7a6e;
-  --font-display: "Luckiest Guy", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  
+  --font-sans: 'Milk', sans-serif;
+  
+  --font-display: 'Milk', sans-serif; 
 }
 
 :root {
@@ -29,11 +39,6 @@ body {
 ::selection {
   background: var(--color-cola-red);
   color: var(--color-cream);
-}
-
-.font-display {
-  font-family: var(--font-display);
-  font-weight: 400;
 }
 
 /* thin, elegant scrollbar for horizontal rails */

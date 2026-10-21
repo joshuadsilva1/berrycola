@@ -136,6 +136,7 @@ export interface OrderPayload {
   };
   items: { productId: string; variantId?: string; quantity: number }[];
   promoCode?: string;
+  customerNote?: string;
 }
 
 export interface Order {
@@ -145,6 +146,7 @@ export interface Order {
   customerEmail: string;
   customerPhone: string | null;
   shippingAddress?: string | null;
+  customerNote?: string | null;
   subtotal: number;
   promoCode?: string | null;
   discountAmount?: number;

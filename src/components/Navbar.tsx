@@ -48,8 +48,8 @@ export default function Navbar() {
               alt="BerryCola"
               className="w-10 h-10 rounded-full shadow-md transition-transform duration-300 group-hover:rotate-12"
             />
-            <span className="font-display text-lg tracking-wide text-espresso hidden sm:block">
-              BERRYCOLA
+            <span className="font-display text-lg via-black hidden sm:block">
+              Berrycola
             </span>
           </Link>
 

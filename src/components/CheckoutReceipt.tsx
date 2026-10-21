@@ -47,6 +47,8 @@ export default function CheckoutReceipt() {
   const [printKey, setPrintKey] = useState(0);
   const [isPrinting, setIsPrinting] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
+  const [customerNote, setCustomerNote] = useState("");
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   const [completedOrder, setCompletedOrder] = useState<Order | null>(() => {
     try {
@@ -72,7 +74,6 @@ export default function CheckoutReceipt() {
 
   const printAudioRef = useRef<HTMLAudioElement | null>(null);
   const printSoundTimerRef = useRef<number | null>(null);
-  const autoOrderTriggeredRef = useRef(false);
 
   // Build current receipt items from either completed order snapshot or live cart
   const liveItems: ReceiptItemSnapshot[] = cart.lines.map((line) => ({
@@ -125,22 +126,30 @@ export default function CheckoutReceipt() {
     }, 2350);
   };
 
-  // Automatically place order and feed receipt out of the machine once profile is verified
+  // Orders are created only after the customer explicitly starts checkout.
   useEffect(() => {
-    if (authLoading || !firebaseUser || !profile || !isProfileComplete(profile)) {
-      return;
+    if (displayItems.length > 0 && printKey === 0) {
+      triggerReprint();
     }
 
-    if (liveItems.length > 0 && !autoOrderTriggeredRef.current) {
-      autoOrderTriggeredRef.current = true;
-      const snapshot = [...liveItems];
-      setPrintedItemsSnapshot(snapshot);
-      setOrderError(null);
+    return () => {
+      if (printAudioRef.current) {
+        printAudioRef.current.pause();
+      }
+      if (printSoundTimerRef.current) {
+        window.clearTimeout(printSoundTimerRef.current);
+      }
+    };
+  }, []);
 
-      // Start printing receipt immediately while order logs
-      triggerReprint();
-
-      placeOrder({
+  const handleProceedToPayment = async () => {
+    if (!firebaseUser || !profile || !liveItems.length || isPlacingOrder || completedOrder) return;
+    setIsPlacingOrder(true);
+    setOrderError(null);
+    const snapshot = [...liveItems];
+    setPrintedItemsSnapshot(snapshot);
+    try {
+      const order = await placeOrder({
         customer: {
           name: profile.name || firebaseUser.displayName || "Collector",
           email: profile.email || firebaseUser.email || "",
@@ -155,33 +164,21 @@ export default function CheckoutReceipt() {
           variantId: item.variantId ?? undefined,
           quantity: item.qty,
         })),
-      })
-        .then((order) => {
-          setCompletedOrder(order);
-          cart.clearCart();
-          try {
-            sessionStorage.setItem(
-              LAST_RECEIPT_STORAGE_KEY,
-              JSON.stringify({ order, items: snapshot })
-            );
-          } catch {}
-        })
-        .catch((err: any) => {
-          setOrderError(err?.message || "Couldn't finalize order.");
-        });
-    } else if (displayItems.length > 0 && printKey === 0) {
+        customerNote: customerNote.trim() || undefined,
+      });
+      setCompletedOrder(order);
+      cart.clearCart();
+      try {
+        sessionStorage.setItem(LAST_RECEIPT_STORAGE_KEY, JSON.stringify({ order, items: snapshot }));
+      } catch {}
       triggerReprint();
+    } catch (err: any) {
+      setPrintedItemsSnapshot(null);
+      setOrderError(err?.message || "Couldn't prepare your order.");
+    } finally {
+      setIsPlacingOrder(false);
     }
-
-    return () => {
-      if (printAudioRef.current) {
-        printAudioRef.current.pause();
-      }
-      if (printSoundTimerRef.current) {
-        window.clearTimeout(printSoundTimerRef.current);
-      }
-    };
-  }, [authLoading, firebaseUser, profile]);
+  };
 
   // Redirect unauthenticated users to login first
   if (!authLoading && !firebaseUser) {
@@ -254,7 +251,7 @@ export default function CheckoutReceipt() {
       <div className="relative z-30 max-w-2xl mx-auto px-4 mb-6 flex items-center justify-between">
         <button
           onClick={() => navigate("/shop")}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-xs font-extrabold uppercase tracking-wider text-espresso hover:text-cola-red transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-xs font-extrabold uppercase  text-espresso hover:text-cola-red transition-all cursor-pointer"
         >
           <ArrowLeft size={15} />
           Back to Shop
@@ -264,7 +261,7 @@ export default function CheckoutReceipt() {
           <button
             onClick={() => navigate("/account")}
             title="View Collector Profile"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-xs font-extrabold uppercase tracking-wider text-espresso hover:text-cola-red transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-xs font-extrabold uppercase  text-espresso hover:text-cola-red transition-all cursor-pointer"
           >
             <UserCheck size={14} />
             Profile
@@ -273,7 +270,7 @@ export default function CheckoutReceipt() {
           <button
             onClick={triggerReprint}
             title="Re-print receipt with sound"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-xs font-extrabold uppercase tracking-wider text-espresso hover:text-cola-red transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-xs font-extrabold uppercase  text-espresso hover:text-cola-red transition-all cursor-pointer"
           >
             <RotateCcw size={14} className={isPrinting ? "animate-spin" : ""} />
             Re-Print
@@ -305,6 +302,44 @@ export default function CheckoutReceipt() {
           </p>
         </div>
       )}
+
+      <section className="relative z-30 max-w-md mx-auto mb-8 px-4">
+        <div className="rounded-2xl bg-[#fbf5e9] border-2 border-[#1e1a18] p-5 shadow-[0_4px_0_#1e1a18]">
+          <h1 className="font-display text-xl text-espresso">Your order</h1>
+          <label htmlFor="customer-order-note" className="block mt-4 mb-1.5 text-xs font-semibold uppercase tracking-wide text-espresso/75">
+            Note for the BerryCola team <span className="normal-case font-normal">(optional)</span>
+          </label>
+          <textarea
+            id="customer-order-note"
+            value={customerNote}
+            onChange={(event) => setCustomerNote(event.target.value)}
+            maxLength={2000}
+            rows={3}
+            disabled={Boolean(completedOrder)}
+            placeholder="Gift message, customization request, delivery instructions…"
+            className="w-full resize-y rounded-xl border-2 border-[#1e1a18]/25 bg-white px-3 py-2.5 text-sm text-espresso outline-none focus:border-cola-red disabled:opacity-60"
+          />
+          {completedOrder ? (
+            <div className="mt-4 rounded-xl bg-amber-50 border border-amber-300 p-3 text-sm text-amber-950">
+              Order #{completedOrder.id.slice(0, 8).toUpperCase()} is prepared. Razorpay checkout can be connected here once the Razorpay key and server payment-order endpoint are configured.
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleProceedToPayment}
+                disabled={!liveItems.length || isPlacingOrder}
+                className="mt-4 w-full rounded-full bg-cola-red px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isPlacingOrder ? "Preparing order…" : "Continue to payment"}
+              </button>
+              <p className="mt-2 text-center text-[11px] text-espresso/60">
+                Your order is checked against live prices and stock before payment.
+              </p>
+            </>
+          )}
+        </div>
+      </section>
 
       {/* =====================================================================
           1. KIOSK FLUORESCENT LIGHTBOX SIGN & CHROME DISPENSER SLOT
@@ -447,7 +482,7 @@ export default function CheckoutReceipt() {
 
                 {/* Order & Customer Metadata */}
                 <div className="px-5 w-full font-receipt-mono text-[10.5px] leading-[1.45] text-[#181818]">
-                  <p className="text-center uppercase font-bold tracking-wider">
+                  <p className="text-center uppercase font-bold ">
                     {customerDisplayName} · [ORDER #{receiptOrderId}]
                   </p>
                   <p className="text-center uppercase text-[10px] text-[#333]">
@@ -515,7 +550,7 @@ export default function CheckoutReceipt() {
                       className="h-32 w-28 object-cover rounded-[3px] bg-white p-1.5 border border-black/15 shadow-[0_10px_20px_rgba(0,0,0,0.22)] -rotate-12 transition-transform duration-300 group-hover:-rotate-6"
                     />
                     {displayItems.length > 1 && (
-                      <span className="absolute -bottom-2 -right-3 px-2 py-0.5 rounded-full bg-[#181818] text-[#faf9f5] font-receipt-mono text-[9px] font-bold tracking-wider shadow">
+                      <span className="absolute -bottom-2 -right-3 px-2 py-0.5 rounded-full bg-[#181818] text-[#faf9f5] font-receipt-mono text-[9px] font-bold  shadow">
                         +{displayItems.length - 1} MORE
                       </span>
                     )}
@@ -544,7 +579,7 @@ export default function CheckoutReceipt() {
                     ))}
                   </div>
 
-                  <p className="font-receipt-mono text-[9.5px] text-center text-[#333] tracking-wider">
+                  <p className="font-receipt-mono text-[9.5px] text-center text-[#333] ">
                     {completedOrder
                       ? `'Thank You' Order #${completedOrder.id.slice(0, 8).toUpperCase()}`
                       : `'BerryCola' Official Receipt`}

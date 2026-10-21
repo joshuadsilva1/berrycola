@@ -168,7 +168,7 @@ export default function ReviewsSection({
         <div className="bg-[#fbf5e9] border-2 border-[#1e1a18] rounded-3xl p-6 sm:p-8 shadow-[0_5px_0_#1e1a18] mb-10">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] text-[11px] font-semibold uppercase tracking-wider text-espresso mb-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] text-[11px] font-semibold uppercase  text-espresso mb-3">
                 <ShieldCheck size={14} className="text-cola-red" />
                 100% Verified Buyers Only
               </div>
@@ -210,7 +210,7 @@ export default function ReviewsSection({
                     <button
                       type="button"
                       onClick={() => setShowForm((s) => !s)}
-                      className="px-5 py-3 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-[#b81d1d] transition-all text-xs font-semibold uppercase tracking-wider flex items-center gap-2 cursor-pointer"
+                      className="px-5 py-3 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-[#b81d1d] transition-all text-xs font-semibold uppercase  flex items-center gap-2 cursor-pointer"
                     >
                       <Sparkles size={14} />
                       {showForm ? "Close Form" : "Write a Review"}
@@ -261,7 +261,7 @@ export default function ReviewsSection({
               >
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-espresso mb-2">
+                    <label className="block text-xs font-semibold uppercase  text-espresso mb-2">
                       Your Rating *
                     </label>
                     <div className="flex items-center gap-2">
@@ -289,7 +289,7 @@ export default function ReviewsSection({
                   </div>
 
                   <div className="flex-1 min-w-[200px] max-w-xs">
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-espresso mb-1.5">
+                    <label className="block text-xs font-semibold uppercase  text-espresso mb-1.5">
                       Display Name
                     </label>
                     <input
@@ -304,7 +304,7 @@ export default function ReviewsSection({
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-espresso mb-1.5">
+                    <label className="block text-xs font-semibold uppercase  text-espresso mb-1.5">
                       Review Headline (Optional)
                     </label>
                     <input
@@ -318,7 +318,7 @@ export default function ReviewsSection({
 
                   {/* Optional Image Upload */}
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-espresso mb-1.5">
+                    <label className="block text-xs font-semibold uppercase  text-espresso mb-1.5">
                       Add a Photo (Optional)
                     </label>
                     <div className="flex items-center gap-2.5">
@@ -365,7 +365,7 @@ export default function ReviewsSection({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-espresso mb-1.5">
+                  <label className="block text-xs font-semibold uppercase  text-espresso mb-1.5">
                     Your Review *
                   </label>
                   <textarea
@@ -386,7 +386,7 @@ export default function ReviewsSection({
                   <button
                     type="submit"
                     disabled={submitting || uploadingImage}
-                    className="px-6 py-3 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-[#b81d1d] transition-all text-xs font-semibold uppercase tracking-wider cursor-pointer disabled:opacity-50"
+                    className="px-6 py-3 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-[#b81d1d] transition-all text-xs font-semibold uppercase  cursor-pointer disabled:opacity-50"
                   >
                     {submitting ? "Publishing…" : "Publish Verified Review"}
                   </button>
@@ -445,7 +445,7 @@ export default function ReviewsSection({
                           />
                         ))}
                       </div>
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white border border-[#1e1a18] text-[10px] font-semibold uppercase tracking-wider text-espresso">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white border border-[#1e1a18] text-[10px] font-semibold uppercase  text-espresso">
                         <ShieldCheck size={11} className="text-cola-red" />
                         Verified Buyer
                       </span>

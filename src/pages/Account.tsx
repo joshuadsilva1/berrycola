@@ -8,14 +8,7 @@ import { updateMyProfile } from "../lib/api";
 
 const PAPER_TEXTURE = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E")`;
 
-const RANK_OPTIONS = [
-  "Newbie Collector",
-  "Charm Addict",
-  "Bag Styler",
-  "VIP Stacker",
-  "Chief Jingle Officer",
-  "Founder",
-];
+
 
 // Center chain holding the heavy ID card
 const NUM_MAIN_LINKS = 6;
@@ -185,14 +178,7 @@ export default function Account() {
       setNewPincode(profile?.pincode || "");
       setNewPhoto(firebaseUser?.photoURL || "");
 
-      if (firebaseUser) {
-        const savedRank = localStorage.getItem(`bc-rank-${firebaseUser.uid}`);
-        if (savedRank) {
-          setStatusRank(savedRank);
-        } else if (profile?.isAdmin) {
-          setStatusRank("Founder");
-        }
-      }
+      
     }
   }, [firebaseUser, profile, isEditing, showDeliveryModal]);
 
@@ -389,7 +375,7 @@ export default function Account() {
       )}
 
       {/* Stage Container */}
-      <div className="relative w-full max-w-[360px] h-[680px]">
+<div className="relative w-full max-w-[360px] h-[800px] sm:h-[760px]">
         {/* 1. TOP RECTANGULAR SILVER CLIP & SPLIT O-RING (From your reference image) */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
           <svg width="90" height="92" viewBox="0 0 90 92" className="overflow-visible">
@@ -833,29 +819,7 @@ export default function Account() {
                     )}
                   </div>
 
-                  {/* STATUS / RANK ROW (Editable Dropdown) */}
-                  <div className="relative flex items-end border-b-[1.5px] border-dashed border-espresso/40 pb-1">
-                    <span className="text-[10px] uppercase tracking-widest text-espresso font-semibold w-20 text-left">
-                      Status
-                    </span>
-                    {isEditing ? (
-                      <select
-                        value={statusRank}
-                        onChange={(e) => setStatusRank(e.target.value)}
-                        className="font-handwritten text-2xl leading-none text-espresso/90 bg-white/70 border border-espresso/20 rounded px-2 py-0.5 outline-none w-full -mb-1 shadow-inner cursor-pointer"
-                      >
-                        {RANK_OPTIONS.map((rank) => (
-                          <option key={rank} value={rank} className="font-sans text-sm">
-                            {rank}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span className="font-handwritten text-3xl leading-none text-espresso/90 absolute left-20 bottom-1 rotate-1 truncate max-w-[160px]">
-                        {statusRank}
-                      </span>
-                    )}
-                  </div>
+                 
 
                   {/* DELIVERY ROW */}
                   <div className="relative flex items-center justify-between border-b-[1.5px] border-dashed border-espresso/40 pb-1.5 pt-0.5">
@@ -868,7 +832,7 @@ export default function Account() {
                         setIsEditingAddress(!profileDone);
                         setShowDeliveryModal(true);
                       }}
-                      className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-espresso bg-espresso/5 hover:bg-cola-red hover:text-cream px-2 py-1 rounded-md border border-espresso/15 transition-all cursor-pointer shadow-sm ml-auto z-20"
+                      className="flex items-center gap-1.5 text-[9px] font-bold uppercase  text-espresso bg-espresso/5 hover:bg-cola-red hover:text-cream px-2 py-1 rounded-md border border-espresso/15 transition-all cursor-pointer shadow-sm ml-auto z-20"
                     >
                       <MapPin size={10} className="text-cola-red" />
                       <span className="truncate max-w-[130px]">
@@ -910,15 +874,16 @@ export default function Account() {
         </div>
       </div>
 
-      {/* ACTION DOCK UNDERNEATH HANGING BADGE */}
-      <div className="flex flex-wrap items-center justify-center gap-3 mt-4 z-30">
+    {/* ACTION DOCK UNDERNEATH HANGING BADGE */}
+      {/* Changed from z-30 to relative z-10 so the chains (z-15+) float above it */}
+      <div className="relative flex flex-wrap items-center justify-center gap-3 mt-4 z-10">
         <button
           type="button"
           onClick={() => {
             setIsEditingAddress(!profileDone);
             setShowDeliveryModal(true);
           }}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#fbf5e9] text-espresso border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:text-cola-red text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#fbf5e9] text-espresso border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:text-cola-red text-xs font-bold uppercase  transition-all cursor-pointer"
         >
           <MapPin size={14} className="text-cola-red" />
           {profileDone ? (
@@ -939,7 +904,7 @@ export default function Account() {
           <button
             type="button"
             onClick={() => navigate("/checkout")}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-[#b81d1d] text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-[#b81d1d] text-xs font-bold uppercase  transition-all cursor-pointer"
           >
             Checkout <ArrowRight size={14} />
           </button>
@@ -949,7 +914,7 @@ export default function Account() {
           type="button"
           onClick={handleLogOut}
           disabled={isLoggingOut}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white text-espresso/75 border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] active:translate-y-0.5 hover:text-cola-red text-xs font-bold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white text-espresso/75 border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] active:translate-y-0.5 hover:text-cola-red text-xs font-bold uppercase  transition-all cursor-pointer disabled:opacity-50"
         >
           <LogOut size={13} />
           {isLoggingOut ? "Signing out..." : "Sign Out"}
@@ -1013,17 +978,17 @@ export default function Account() {
                 <div className="bg-white border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] rounded-2xl p-5 flex flex-col gap-3">
                   <div className="flex items-center justify-between border-b border-[#1e1a18]/10 pb-2.5">
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-espresso/50 block">Recipient</span>
+                      <span className="text-[10px] font-bold uppercase  text-espresso/50 block">Recipient</span>
                       <span className="text-base font-bold text-espresso">{profile?.name || "Collector"}</span>
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    <span className="text-[10px] font-bold uppercase  px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
                       Primary Address
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-espresso/85">
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-espresso/50 block mb-0.5">Contact</span>
+                      <span className="text-[10px] font-bold uppercase  text-espresso/50 block mb-0.5">Contact</span>
                       <p className="flex items-center gap-1.5 font-medium">
                         <Phone size={12} className="text-cola-red shrink-0" />
                         {profile?.phone || "—"}
@@ -1035,7 +1000,7 @@ export default function Account() {
                     </div>
 
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-espresso/50 block mb-0.5">Shipping Destination</span>
+                      <span className="text-[10px] font-bold uppercase  text-espresso/50 block mb-0.5">Shipping Destination</span>
                       <p className="font-medium leading-relaxed">
                         {profile?.address}
                         <br />
@@ -1052,7 +1017,7 @@ export default function Account() {
                   <button
                     type="button"
                     onClick={() => setIsEditingAddress(true)}
-                    className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-white text-espresso border-2 border-[#1e1a18] shadow-[0_2.5px_0_#1e1a18] active:translate-y-0.5 hover:text-cola-red text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-white text-espresso border-2 border-[#1e1a18] shadow-[0_2.5px_0_#1e1a18] active:translate-y-0.5 hover:text-cola-red text-xs font-bold uppercase  transition-all cursor-pointer"
                   >
                     <Edit2 size={13} /> Edit Address
                   </button>
@@ -1061,7 +1026,7 @@ export default function Account() {
                     <button
                       type="button"
                       onClick={() => navigate("/checkout")}
-                      className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-[#b81d1d] text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-[#b81d1d] text-xs font-bold uppercase  transition-all cursor-pointer"
                     >
                       Proceed to Checkout <ArrowRight size={14} />
                     </button>
@@ -1069,7 +1034,7 @@ export default function Account() {
                     <button
                       type="button"
                       onClick={() => setShowDeliveryModal(false)}
-                      className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-espresso text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_2.5px_0_#1e1a18] active:translate-y-0.5 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-espresso text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_2.5px_0_#1e1a18] active:translate-y-0.5 text-xs font-bold uppercase  transition-all cursor-pointer"
                     >
                       Done
                     </button>
@@ -1079,7 +1044,7 @@ export default function Account() {
             ) : (
               /* EDIT MODE */
               <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
-                <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wider text-espresso/70">
+                <label className="flex flex-col gap-1 text-[11px] font-bold uppercase  text-espresso/70">
                   Full Name *
                   <input
                     required
@@ -1092,7 +1057,7 @@ export default function Account() {
                 </label>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wider text-espresso/70">
+                  <label className="flex flex-col gap-1 text-[11px] font-bold uppercase  text-espresso/70">
                     Email Address *
                     <input
                       required
@@ -1104,7 +1069,7 @@ export default function Account() {
                     />
                   </label>
 
-                  <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wider text-espresso/70">
+                  <label className="flex flex-col gap-1 text-[11px] font-bold uppercase  text-espresso/70">
                     Phone Number *
                     <input
                       required
@@ -1117,7 +1082,7 @@ export default function Account() {
                   </label>
                 </div>
 
-                <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wider text-espresso/70">
+                <label className="flex flex-col gap-1 text-[11px] font-bold uppercase  text-espresso/70">
                   Street Address / Flat / Building *
                   <input
                     required
@@ -1130,7 +1095,7 @@ export default function Account() {
                 </label>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wider text-espresso/70">
+                  <label className="flex flex-col gap-1 text-[11px] font-bold uppercase  text-espresso/70">
                     City *
                     <input
                       required
@@ -1142,7 +1107,7 @@ export default function Account() {
                     />
                   </label>
 
-                  <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wider text-espresso/70">
+                  <label className="flex flex-col gap-1 text-[11px] font-bold uppercase  text-espresso/70">
                     State
                     <input
                       type="text"
@@ -1153,7 +1118,7 @@ export default function Account() {
                     />
                   </label>
 
-                  <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wider text-espresso/70">
+                  <label className="flex flex-col gap-1 text-[11px] font-bold uppercase  text-espresso/70">
                     Pincode *
                     <input
                       required
@@ -1171,7 +1136,7 @@ export default function Account() {
                     <button
                       type="button"
                       onClick={() => setIsEditingAddress(false)}
-                      className="px-5 py-2.5 rounded-full bg-white text-espresso border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] active:translate-y-0.5 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+                      className="px-5 py-2.5 rounded-full bg-white text-espresso border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] active:translate-y-0.5 text-xs font-bold uppercase  transition-all cursor-pointer"
                     >
                       Cancel
                     </button>
@@ -1179,7 +1144,7 @@ export default function Account() {
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-[#b81d1d] text-xs font-bold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-[#b81d1d] text-xs font-bold uppercase  transition-all cursor-pointer disabled:opacity-50"
                   >
                     <Check size={14} />
                     {isSaving

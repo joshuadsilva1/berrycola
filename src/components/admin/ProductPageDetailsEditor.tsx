@@ -133,7 +133,7 @@ export default function ProductPageDetailsEditor() {
   const inputClass =
     "w-full border-2 border-[#1e1a18] rounded-xl px-3.5 py-2.5 text-sm bg-white text-espresso focus:outline-none focus:border-cola-red";
   const labelClass =
-    "flex flex-col gap-1.5 text-xs font-semibold uppercase tracking-wider text-espresso/75";
+    "flex flex-col gap-1.5 text-xs font-semibold uppercase  text-espresso/75";
 
   if (loading) {
     return (
@@ -159,7 +159,7 @@ export default function ProductPageDetailsEditor() {
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-[#b81d1d] text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-[#b81d1d] text-xs font-semibold uppercase  transition-all cursor-pointer disabled:opacity-50"
           >
             {savedToast ? <Check size={15} /> : <Save size={15} />}
             {saving ? "Saving…" : savedToast ? "Saved!" : "Save Details"}
@@ -280,7 +280,7 @@ export default function ProductPageDetailsEditor() {
         {/* Custom Additional Static Rows */}
         <div className="pt-2 border-t border-[#1e1a18]/15 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-espresso/75">
+            <span className="text-xs font-semibold uppercase  text-espresso/75">
               Additional Static Detail Rows
             </span>
             <button

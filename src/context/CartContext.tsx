@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, useEffect, type ReactNode } from "react";
 import { variantPrice, type Product, type ProductVariant } from "../data/products";
 import { track } from "../lib/analytics";
 
@@ -31,8 +31,25 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [lines, setLines] = useState<CartLine[]>([]);
+  // 1. Initialize state by reading from localStorage
+  const [lines, setLines] = useState<CartLine[]>(() => {
+    try {
+      const savedCart = localStorage.getItem("bc-cart");
+      if (savedCart) {
+        return JSON.parse(savedCart);
+      }
+    } catch (err) {
+      console.error("Failed to parse cart from local storage", err);
+    }
+    return [];
+  });
+
   const [isOpen, setIsOpen] = useState(false);
+
+  // 2. Automatically sync to localStorage whenever 'lines' changes
+  useEffect(() => {
+    localStorage.setItem("bc-cart", JSON.stringify(lines));
+  }, [lines]);
 
   const addItem = (product: Product, variant: ProductVariant | null = null, qty = 1) => {
     const key = lineKey(product, variant);
@@ -87,7 +104,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         addItem,
         removeItem,
         setQty,
-        clearCart: () => setLines([]),
+        clearCart: () => setLines([]), // This will automatically trigger the useEffect and clear localStorage
         count,
         subtotal,
       }}

@@ -543,7 +543,7 @@ function UserLoginsTable({ rows }: { rows: AnalyticsLoginEntry[] }) {
                       <div className="flex items-center gap-1.5">
                         <span className="font-semibold text-espresso truncate">{displayName}</span>
                         {r.isAdmin && (
-                          <span className="text-[10px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded bg-espresso text-cream">
+                          <span className="text-[10px] uppercase  font-semibold px-1.5 py-0.5 rounded bg-espresso text-cream">
                             Admin
                           </span>
                         )}

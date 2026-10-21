@@ -140,7 +140,7 @@ export default function CategoriesTable({
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-espresso/70 hover:text-cola-red cursor-pointer flex items-center gap-1 uppercase tracking-wider">
+              <label className="text-[10px] font-bold text-espresso/70 hover:text-cola-red cursor-pointer flex items-center gap-1 uppercase ">
                 <ImagePlus size={11} /> PNG
                 <input
                   type="file"
@@ -157,7 +157,7 @@ export default function CategoriesTable({
               <button
                 type="button"
                 onClick={() => setOpenIconPickerFor(openIconPickerFor === "__new__" ? null : "__new__")}
-                className="text-[10px] font-bold text-espresso/70 hover:text-cola-red flex items-center gap-1 uppercase tracking-wider cursor-pointer"
+                className="text-[10px] font-bold text-espresso/70 hover:text-cola-red flex items-center gap-1 uppercase  cursor-pointer"
               >
                 <Sparkles size={11} /> Icon
               </button>
@@ -174,7 +174,7 @@ export default function CategoriesTable({
           <button
             type="submit"
             disabled={!newCatName.trim() || uploadingUrl}
-            className="shrink-0 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-[#b81d1d] text-xs font-semibold uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer"
+            className="shrink-0 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-[#b81d1d] text-xs font-semibold uppercase  transition-all disabled:opacity-50 cursor-pointer"
           >
             Add Category
           </button>
@@ -194,7 +194,7 @@ export default function CategoriesTable({
       <div className="overflow-x-auto border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] rounded-2xl bg-white">
         <table className="w-full text-left border-collapse min-w-[500px]">
           <thead>
-            <tr className="border-b-2 border-[#1e1a18] bg-[#fbf5e9] text-xs text-espresso font-bold uppercase tracking-wider">
+            <tr className="border-b-2 border-[#1e1a18] bg-[#fbf5e9] text-xs text-espresso font-bold uppercase ">
               <th className="p-3.5 font-bold w-32">Visual</th>
               <th className="p-3.5 font-bold">Category Name</th>
               <th className="p-3.5 font-bold w-24 text-center">Active</th>
@@ -323,7 +323,7 @@ function CategoryRow({
               )}
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-espresso/70 hover:text-cola-red cursor-pointer flex items-center gap-1 uppercase tracking-wider">
+              <label className="text-[10px] font-bold text-espresso/70 hover:text-cola-red cursor-pointer flex items-center gap-1 uppercase ">
                 <ImagePlus size={10} /> PNG
                 <input
                   type="file"
@@ -339,7 +339,7 @@ function CategoryRow({
               <button
                 type="button"
                 onClick={onTogglePicker}
-                className={`text-[10px] font-bold flex items-center gap-1 uppercase tracking-wider transition-colors cursor-pointer ${
+                className={`text-[10px] font-bold flex items-center gap-1 uppercase  transition-colors cursor-pointer ${
                   isPickerOpen ? "text-cola-red" : "text-espresso/70 hover:text-cola-red"
                 }`}
               >

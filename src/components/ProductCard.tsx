@@ -43,7 +43,7 @@ export default function ProductCard({ product, index = 0 }: { product: Product; 
         <div className="relative aspect-square rounded-3xl bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_4px_0_#1e1a18] flex items-center justify-center overflow-hidden transition-transform">
           {product.badge && (
             <span
-              className={`absolute top-3.5 left-3.5 text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] z-10 ${badgeStyles[product.badge] ?? "bg-[#fbf5e9] text-espresso"}`}
+              className={`absolute top-3.5 left-3.5 text-[10px] font-semibold uppercase  px-2.5 py-1 rounded-full border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] z-10 ${badgeStyles[product.badge] ?? "bg-[#fbf5e9] text-espresso"}`}
             >
               {product.badge}
             </span>

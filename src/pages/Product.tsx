@@ -168,7 +168,7 @@ function ProductDetail({ product }: { product: ProductType }) {
             className="sticky top-28 relative"
           >
             {product.badge && (
-              <span className="absolute top-5 left-5 z-20 text-[11px] font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18]">
+              <span className="absolute top-5 left-5 z-20 text-[11px] font-semibold uppercase  px-3 py-1.5 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18]">
                 {product.badge}
               </span>
             )}

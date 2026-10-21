@@ -330,7 +330,7 @@ export default function ImageResizerModal({
 
         {/* Aspect Ratio Preset Buttons */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-espresso/55 mr-1">
+          <span className="text-xs font-semibold uppercase  text-espresso/55 mr-1">
             Ratio:
           </span>
           {PRESETS.map((p) => {

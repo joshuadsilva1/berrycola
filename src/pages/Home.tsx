@@ -70,7 +70,7 @@ export default function Home() {
           <motion.span initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6 }} className="inline-block px-4 py-1.5 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] text-xs uppercase tracking-[0.22em] text-cola-red font-semibold mb-6">
             New Drop · Bag Charms Collection
           </motion.span>
-          <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="font-display text-balance text-5xl sm:text-6xl md:text-7xl leading-[1.06] text-espresso">
+          <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="font-display text-5xl sm:text-6xl md:text-7xl text-espresso">
             Small charms.<br /><span className="text-cola-red">Big statements.</span>
           </motion.h1>
           <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.7 }} className="mt-6 text-espresso/65 text-lg max-w-xl mx-auto text-balance">
@@ -105,7 +105,7 @@ export default function Home() {
             <p className="text-xs uppercase tracking-[0.25em] text-cola-red font-semibold mb-2">Fan Favorites</p>
             <h2 className="font-display text-3xl sm:text-4xl text-espresso">Bestselling Charms</h2>
           </div>
-          <Link to="/shop" className="px-4 py-2 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-xs font-semibold uppercase tracking-wider text-espresso hover:text-cola-red flex items-center gap-1.5 transition-all">
+          <Link to="/shop" className="px-4 py-2 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-xs font-semibold uppercase  text-espresso hover:text-cola-red flex items-center gap-1.5 transition-all">
             View all <ArrowRight size={14} />
           </Link>
         </Reveal>

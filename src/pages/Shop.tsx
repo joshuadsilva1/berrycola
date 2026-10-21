@@ -135,7 +135,7 @@ export default function Shop() {
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as typeof sort)}
-            className="text-xs font-semibold uppercase tracking-wider rounded-full px-4 py-2.5 bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] text-espresso focus:outline-none hover:text-cola-red cursor-pointer transition-all"
+            className="text-xs font-semibold uppercase  rounded-full px-4 py-2.5 bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] text-espresso focus:outline-none hover:text-cola-red cursor-pointer transition-all"
           >
             <option value="featured">Featured</option>
             <option value="price-asc">Price: Low to High</option>

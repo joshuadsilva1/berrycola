@@ -404,7 +404,7 @@ export default function CartDrawer() {
 
                             <button
                               onClick={() => handleRemove(item)}
-                              className="text-[10px] uppercase tracking-wider text-espresso/50 hover:text-cola-red flex items-center gap-0.5 transition-colors"
+                              className="text-[10px] uppercase text-espresso/50 hover:text-cola-red flex items-center gap-0.5 transition-colors"
                             >
                               <Trash2 size={10} /> [del]
                             </button>
@@ -433,7 +433,7 @@ export default function CartDrawer() {
                 {rawItems.length > 0 ? (
                   <button
                     onClick={handleCheckout}
-                    className="mt-2.5 w-full py-2.5 px-3 rounded-lg bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] hover:bg-[#b81d1d] active:translate-y-0.5 transition-all flex items-center justify-between gap-2 font-sans font-extrabold text-xs uppercase tracking-wider cursor-pointer"
+                    className="mt-2.5 w-full py-2.5 px-3 rounded-lg bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] hover:bg-[#b81d1d] active:translate-y-0.5 transition-all flex items-center justify-between gap-2 font-sans font-extrabold text-xs uppercase cursor-pointer"
                   >
                     <span className="inline-flex items-center gap-1.5">
                       <Printer size={14} className="shrink-0" />
