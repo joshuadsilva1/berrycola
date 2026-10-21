@@ -6,7 +6,7 @@ import Footer from "./components/Footer";
 import CartDrawer from "./components/CartDrawer";
 import IntroSplash from "./components/IntroSplash";
 import { CartProvider } from "./context/CartContext";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { OrderUpdatesProvider } from "./context/OrderUpdatesContext";
 import OrderUpdateBanner from "./components/OrderUpdateBanner";
 import { RequireAdmin, RequireAuth } from "./components/ProtectedRoute";
@@ -29,6 +29,7 @@ import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminMessages from "./pages/admin/AdminMessages";
 import AdminStorefront from "./pages/admin/AdminStorefront";
 import AdminPromos from "./pages/admin/AdminPromos";
+import ComingSoon from "./pages/ComingSoon";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -46,10 +47,33 @@ function PageViewTracker() {
   return null;
 }
 
+function ContentGuard({ storeConfig, children }: { storeConfig: any; children: React.ReactNode }) {
+  const { user, profile, loading } = useAuth();
+  const location = useLocation();
+
+  // Wait until storefront config finishes fetching
+  if (!storeConfig || loading) {
+    return <div className="min-h-screen bg-cream" />;
+  }
+
+  const isAdmin = Boolean(profile?.isAdmin || user?.isAdmin || (user as any)?.is_admin || (user as any)?.role === "admin");
+  const isAuthOrAdminRoute =
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/login");
+
+  // Block non-admins from all storefront pages when comingSoon is active
+  if (Boolean(storeConfig.comingSoon) && !isAdmin && !isAuthOrAdminRoute) {
+    return <ComingSoon />;
+  }
+
+  return <>{children}</>;
+}
+
 let introPlayedThisVisit = false;
 
 export default function App() {
   const [showIntro, setShowIntro] = useState<boolean>(() => !introPlayedThisVisit);
+  const [storeConfig, setStoreConfig] = useState<any>(null);
 
   const unlockSound = () => {
     try {
@@ -60,7 +84,6 @@ export default function App() {
         if (ctx.state === "suspended") {
           ctx.resume().catch(() => {});
         }
-        // Play a 1-sample silent buffer to permanently unlock WebAudio in this tab
         const buf = ctx.createBuffer(1, 1, 22050);
         const src = ctx.createBufferSource();
         src.buffer = buf;
@@ -76,7 +99,6 @@ export default function App() {
   };
 
   useEffect(() => {
-    // Clean up any old persistent flags that hid the splash screen across refreshes
     try {
       localStorage.removeItem("bc-intro-seen");
       sessionStorage.removeItem("bc-intro-seen");
@@ -86,11 +108,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!showIntro) return;
-
     fetchStorefront()
       .then((data) => {
-        if (data.splashEnabled === false) {
+        setStoreConfig(data);
+        if (showIntro && (data.splashEnabled === false || data.comingSoon)) {
           introPlayedThisVisit = true;
           setShowIntro(false);
         }
@@ -115,36 +136,38 @@ export default function App() {
 
           <ScrollToTop />
           <PageViewTracker />
-          
-          <Navbar />
-          <OrderUpdateBanner />
-          <CartDrawer />
-          
-          <main>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/shop" element={<Shop />} />
-              <Route path="/product/:id" element={<Product />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/checkout" element={<CheckoutReceipt />} />
-              
-              <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
-              
-              <Route path="/admin" element={<Navigate to="/admin/analytics" replace />} />
-              <Route path="/admin/orders" element={<RequireAdmin><AdminOrders /></RequireAdmin>} />
-              <Route path="/admin/analytics" element={<RequireAdmin><AdminAnalytics /></RequireAdmin>} />
-              <Route path="/admin/customers" element={<RequireAdmin><AdminCustomers /></RequireAdmin>} />
-              <Route path="/admin/messages" element={<RequireAdmin><AdminMessages /></RequireAdmin>} />
-              <Route path="/admin/products" element={<RequireAdmin><AdminProducts /></RequireAdmin>} />
-              <Route path="/admin/storefront" element={<RequireAdmin><AdminStorefront /></RequireAdmin>} />
-              <Route path="/admin/promos" element={<RequireAdmin><AdminPromos /></RequireAdmin>} />
-            </Routes>
-          </main>
-          
-          <WhatsAppButton />
-          <Footer />
+
+          <ContentGuard storeConfig={storeConfig}>
+            <Navbar />
+            <OrderUpdateBanner />
+            <CartDrawer />
+
+            <main>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/shop" element={<Shop />} />
+                <Route path="/product/:id" element={<Product />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/checkout" element={<CheckoutReceipt />} />
+
+                <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
+
+                <Route path="/admin" element={<Navigate to="/admin/analytics" replace />} />
+                <Route path="/admin/orders" element={<RequireAdmin><AdminOrders /></RequireAdmin>} />
+                <Route path="/admin/analytics" element={<RequireAdmin><AdminAnalytics /></RequireAdmin>} />
+                <Route path="/admin/customers" element={<RequireAdmin><AdminCustomers /></RequireAdmin>} />
+                <Route path="/admin/messages" element={<RequireAdmin><AdminMessages /></RequireAdmin>} />
+                <Route path="/admin/products" element={<RequireAdmin><AdminProducts /></RequireAdmin>} />
+                <Route path="/admin/storefront" element={<RequireAdmin><AdminStorefront /></RequireAdmin>} />
+                <Route path="/admin/promos" element={<RequireAdmin><AdminPromos /></RequireAdmin>} />
+              </Routes>
+            </main>
+
+            <WhatsAppButton />
+            <Footer />
+          </ContentGuard>
         </CartProvider>
       </OrderUpdatesProvider>
     </AuthProvider>

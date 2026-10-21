@@ -5,7 +5,7 @@ import AdminNav from "../../components/AdminNav";
 import CharmIcon from "../../components/CharmIcon";
 import PhotosEditor, { newEntry, type PhotoEntry, type PhotoMode } from "../../components/admin/PhotosEditor";
 import ProductPageDetailsEditor from "../../components/admin/ProductPageDetailsEditor";
-import { categories as defaultCategories, type GalleryImage, type Product, type ProductVariant } from "../../data/products";
+import type { GalleryImage, Product, ProductVariant } from "../../data/products";
 import {
   createProduct,
   deleteProduct,
@@ -68,11 +68,11 @@ function toImageInput(entry: PhotoEntry, isOption: boolean): ImageInput {
   return input;
 }
 
-function toForm(product?: Product, availableCategories: string[] = defaultCategories): FormState {
+function toForm(product?: Product, availableCategories: string[] = []): FormState {
   const hasOptions = !!product?.variants?.length;
   return {
     name: product?.name ?? "",
-    category: product?.category ?? availableCategories[0] ?? defaultCategories[0],
+    category: product?.category ?? availableCategories[0] ?? "",
     price: product ? String(product.price) : "",
     compareAt: product?.compareAt ? String(product.compareAt) : "",
     blurb: product?.blurb ?? "",
@@ -151,13 +151,15 @@ export default function AdminProducts() {
   const availableCategories = useMemo(
     () =>
       Array.from(
-        new Set([
-          ...defaultCategories,
-          ...(storefront?.trendingCategories ?? []),
-          ...(storefront?.customCategories ?? []),
-        ].filter(Boolean)),
+        new Set(
+          [
+            ...(storefront?.trendingCategories ?? []),
+            ...(storefront?.customCategories ?? []),
+            ...products.map((p) => p.category),
+          ].filter(Boolean),
+        ),
       ),
-    [storefront],
+    [storefront, products],
   );
 
   const handleSaved = (saved: Product) => {

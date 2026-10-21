@@ -1,18 +1,33 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import PaperCharm from "../components/PaperCharm";
 import Reveal from "../components/Reveal";
 import StatCounter from "../components/StatCounter";
+import { useProducts } from "../hooks/useCatalog";
+import { fetchStorefront, type StorefrontSettings } from "../lib/api";
 
 const timeline = [
   { year: "2021", title: "One charm, one idea", copy: "A single enamel bottle-cap charm, hand-poured in small batches for friends." },
-  { year: "2022", title: "The first drop sells out", copy: "500 units gone in under an hour. We knew we were onto something." },
+  { year: "2022", title: "The first drop sells out", copy: "Our first small-batch run sold out immediately. We knew we were onto something." },
   { year: "2023", title: "In-house design studio", copy: "We brought design, plating, and quality control fully in-house." },
-  { year: "2024", title: "120+ charms and counting", copy: "From bag charms to carabiners, every piece is designed to clip on and carry." },
+  { year: "2024", title: "Growing the collection", copy: "From bag charms to tins, every piece is designed to clip on and carry." },
 ];
 
 export default function About() {
+  const { data: products } = useProducts();
+  const [storefront, setStorefront] = useState<StorefrontSettings | null>(null);
+
+  useEffect(() => {
+    fetchStorefront().then(setStorefront).catch(() => {});
+  }, []);
+
+  const heroImage =
+    storefront?.sliderSlides?.[0]?.imageUrl ||
+    products?.find((p) => p.imageUrl)?.imageUrl ||
+    null;
+
   return (
     <div>
       <section className="relative pt-40 pb-24 text-center overflow-hidden">
@@ -29,17 +44,19 @@ export default function About() {
         </Reveal>
       </section>
 
-      <section className="mx-auto max-w-3xl px-6">
-        <Reveal>
-          <div className="rounded-[2rem] overflow-hidden border-2 border-[#1e1a18] shadow-[0_6px_0_#1e1a18]">
-            <img
-              src="/products/bottle-cap-charm.jpg"
-              alt="BerryCola bottle cap charm on denim"
-              className="w-full aspect-[4/3] object-cover"
-            />
-          </div>
-        </Reveal>
-      </section>
+      {heroImage && (
+        <section className="mx-auto max-w-3xl px-6">
+          <Reveal>
+            <div className="rounded-[2rem] overflow-hidden border-2 border-[#1e1a18] shadow-[0_6px_0_#1e1a18]">
+              <img
+                src={heroImage}
+                alt="BerryCola charm collection"
+                className="w-full aspect-[4/3] object-cover"
+              />
+            </div>
+          </Reveal>
+        </section>
+      )}
 
       <section className="mx-auto max-w-5xl px-6 py-10 grid sm:grid-cols-2 gap-8">
         <Reveal>
@@ -66,10 +83,31 @@ export default function About() {
 
       <section className="bg-espresso border-y-2 border-[#1e1a18] py-24 my-16">
         <div className="mx-auto max-w-5xl px-6 grid grid-cols-2 sm:grid-cols-4 gap-8">
-          <StatCounter value={52} suffix="K+" label="Charms Shipped" />
-          <StatCounter value={4.9} suffix="/5" label="Average Rating" decimals={1} />
-          <StatCounter value={120} suffix="+" label="Charm Designs" />
-          <StatCounter value={2021} label="Founded" />
+          <StatCounter
+            value={storefront?.stats?.charmDesigns ?? (products ?? []).length}
+            label="Charm Designs"
+          />
+          <StatCounter
+            value={storefront?.stats?.collectionsCount ?? 0}
+            label="Collections"
+          />
+          <StatCounter
+            value={storefront?.stats?.charmsShipped ?? 0}
+            label="Charms Ordered"
+          />
+          {storefront?.stats?.averageRating != null ? (
+            <StatCounter
+              value={storefront.stats.averageRating}
+              suffix="/5"
+              label="Verified Rating"
+              decimals={1}
+            />
+          ) : (
+            <StatCounter
+              value={storefront?.stats?.totalReviews ?? 0}
+              label="Verified Reviews"
+            />
+          )}
         </div>
       </section>
 

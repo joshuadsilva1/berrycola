@@ -18,7 +18,7 @@ import {
 } from "firebase/auth";
 import { auth, firebaseReady } from "../lib/firebase";
 import { fetchMe, syncSession } from "../lib/api";
-import { setAnalyticsEnabled, track } from "../lib/analytics";
+import { setAnalyticsEnabled, setAnalyticsUser, track } from "../lib/analytics";
 
 export interface Profile {
   id: string;
@@ -131,6 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const merged = mergeProfile(synced, cached);
           setProfile(merged);
           saveCachedProfile(merged);
+          setAnalyticsUser(merged.id);
         } catch {
           // Keep cached profile or build a fallback from Firebase user so login persists
           // even during backend cold starts on Render.
@@ -142,10 +143,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             isAdmin: false,
           };
           setProfile(fallback);
+          setAnalyticsUser(fallback.id);
         }
       } else {
         setProfile(null);
         saveCachedProfile(null);
+        setAnalyticsUser(null);
       }
       setLoading(false);
     });
@@ -154,6 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setAnalyticsEnabled(!profile?.isAdmin);
+    setAnalyticsUser(profile?.id ?? null);
   }, [profile]);
 
   const updateLocalProfile = (patch: Partial<Profile>) => {
@@ -194,6 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     await signInWithPopup(auth, new GoogleAuthProvider());
     track("sign_in", { props: { method: "google" } });
+    syncSession({ explicit: true, method: "google" }).catch(() => {});
   };
 
   const clearRecaptcha = () => {
@@ -233,6 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     await confirmationRef.current.confirm(code);
     track("sign_in", { props: { method: "phone" } });
+    syncSession({ explicit: true, method: "phone" }).catch(() => {});
     confirmationRef.current = null;
     clearRecaptcha();
   };

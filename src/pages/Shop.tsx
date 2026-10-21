@@ -5,7 +5,7 @@ import { LayoutGrid } from "lucide-react";
 import ProductCard from "../components/ProductCard";
 import Reveal from "../components/Reveal";
 import { getCategoryIconComponent } from "../components/CategoryShapes";
-import { categories as defaultCategories, type Category } from "../data/products";
+import type { Category } from "../data/products";
 import { useProducts } from "../hooks/useCatalog";
 import { fetchStorefront, type StorefrontSettings } from "../lib/api";
 import { track } from "../lib/analytics";
@@ -22,13 +22,12 @@ export default function Shop() {
     fetchStorefront().then(setStorefront).catch(console.error);
   }, []);
 
-  // Only show the categories allowed by the admin in Storefront (defaults to Bag Charms & Charm Tins).
   const allowedCategories = useMemo(() => {
     if (storefront && storefront.trendingCategories.length > 0) {
       return storefront.trendingCategories;
     }
-    return defaultCategories;
-  }, [storefront]);
+    return Array.from(new Set((products ?? []).map((p) => p.category).filter(Boolean)));
+  }, [storefront, products]);
 
   const filtered = useMemo(() => {
     const allowedSet = new Set(allowedCategories);

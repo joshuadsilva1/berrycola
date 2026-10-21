@@ -1,13 +1,21 @@
 import type { Category, Crop, Product } from "../data/products";
+import { analyticsHeaders } from "./analytics";
 import { auth } from "./firebase";
 
 function resolveApiBase(): string {
-  const candidates = [import.meta.env.API_BASE_URL, import.meta.env.VITE_API_BASE_URL];
+  // 1. Automatically use local backend during local development (npm run dev)
+  if (import.meta.env.DEV) {
+    return "http://127.0.0.1:5001/api";
+  }
+
+  // 2. In production (Vercel), check env vars or fallback to Render
+  const candidates = [import.meta.env.VITE_API_BASE_URL, import.meta.env.API_BASE_URL];
   for (const c of candidates) {
     if (typeof c === "string" && c.trim() && c.trim() !== "undefined") {
       return c.trim().replace(/\/+$/, "");
     }
   }
+  
   return "https://berrycola-backend.onrender.com/api";
 }
 
@@ -40,7 +48,9 @@ function normalizeProduct(p: Product): Product {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = {
+    ...analyticsHeaders(),
+  };
   if (init?.body) {
     headers["Content-Type"] = "application/json";
   }
@@ -194,8 +204,11 @@ export function fetchOrder(id: string) {
   return authRequest<Order>(`/orders/${id}`);
 }
 
-export function syncSession() {
-  return authRequest("/auth/session", { method: "POST" });
+export function syncSession(opts?: { explicit?: boolean; method?: string }) {
+  return authRequest("/auth/session", {
+    method: "POST",
+    ...(opts ? { body: JSON.stringify(opts) } : {}),
+  });
 }
 
 export function fetchMe() {
@@ -393,8 +406,25 @@ export interface AnalyticsKpis {
   addToCartRate: number | null;
   cartAbandonmentRate: number | null;
   signUps: number;
+  signIns?: number;
   newsletterSignups: number;
   contactMessages: number;
+}
+
+export interface AnalyticsLoginEntry {
+  id: string;
+  userId: string | null;
+  userName: string | null;
+  userEmail: string | null;
+  userPhone: string | null;
+  isAdmin: boolean;
+  event: "sign_in" | "sign_up";
+  method: string;
+  device: string;
+  browser: string;
+  os: string;
+  country: string | null;
+  at: string;
 }
 
 export interface AnalyticsReport {
@@ -441,6 +471,7 @@ export interface AnalyticsReport {
     repeatRate: number | null;
     top: { name: string; email: string | null; orders: number; spend: number }[];
   };
+  logins?: AnalyticsLoginEntry[];
   totals: { newsletterSubscribers: number; contactMessages: number; products: number; outOfStock: number };
 }
 
@@ -455,6 +486,10 @@ export interface LiveAnalytics {
     label: string | null;
     value: number | null;
     device: string | null;
+    browser?: string | null;
+    os?: string | null;
+    userName?: string | null;
+    userEmail?: string | null;
     source: string;
     country: string | null;
     at: string;
@@ -492,10 +527,6 @@ export interface AdminMessages {
 
 export function fetchMessages() {
   return authRequest<AdminMessages>("/admin/messages");
-
-
-
-
 }
 
 
@@ -514,6 +545,10 @@ export interface StaticDetailItem {
 }
 
 export interface ProductPageDetails {
+  defaultMinDays?: number | null;
+  defaultMaxDays?: number | null;
+  defaultMinDate?: string | null;
+  defaultMaxDate?: string | null;
   defaultDeliveryMinDays?: number | null;
   defaultDeliveryMaxDays?: number | null;
   defaultDeliveryMinDate?: string | null;
@@ -521,17 +556,28 @@ export interface ProductPageDetails {
   shippingNote?: string;
   returnPolicy?: string;
   warrantyNote?: string;
-  customItems?: StaticDetailItem[];
+  customItems?: { title: string; value: string }[];
+}
+
+export interface StorefrontStats {
+  charmDesigns: number;
+  collectionsCount: number;
+  charmsShipped: number;
+  totalOrders: number;
+  averageRating: number | null;
+  totalReviews: number;
 }
 
 export interface StorefrontSettings {
   splashEnabled?: boolean;
+  comingSoon?: boolean;
   sliderSlides: Slide[];
   trendingMode: "auto" | "manual";
   trendingCategories: string[];
   categoryImages: Record<string, string>;
   customCategories: string[]; // Stores categories created directly in the admin
   productPageDetails?: ProductPageDetails;
+  stats?: StorefrontStats;
 }
 
 function normalizeStorefront(s: StorefrontSettings): StorefrontSettings {

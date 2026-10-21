@@ -7,10 +7,10 @@ import {
 } from "../CategoryShapes";
 
 const inputClass =
-  "w-full border border-espresso/15 rounded-xl px-3 py-2 text-sm bg-cream focus:outline-none focus:border-cola-red";
+  "w-full border-2 border-[#1e1a18] rounded-xl px-3.5 py-2.5 text-sm bg-white text-espresso focus:outline-none focus:border-cola-red placeholder:text-espresso/40";
 
 const keycapSmClass =
-  "w-8 h-8 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] active:translate-y-0.5 flex items-center justify-center text-espresso hover:text-cola-red transition-all disabled:opacity-30 disabled:pointer-events-none";
+  "w-8 h-8 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] active:translate-y-0.5 flex items-center justify-center text-espresso hover:text-cola-red transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer";
 
 export interface CategoriesTableProps {
   trendingCategories: string[];
@@ -103,8 +103,15 @@ export default function CategoriesTable({
   const NewCatIcon = getCategoryIconComponent(newCatVisual);
 
   return (
-    <section className="bg-cream border border-espresso/10 p-6 rounded-3xl flex flex-col gap-5">
-      <h2 className="text-lg font-semibold text-espresso">Categories</h2>
+    <section className="bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_5px_0_#1e1a18] rounded-3xl p-6 sm:p-8 flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-dashed border-[#1e1a18]/20 pb-4">
+        <div>
+          <h2 className="font-display text-2xl text-espresso">Product Categories</h2>
+          <p className="text-xs text-espresso/65 mt-1">
+            Manage category names, custom PNG or charm icon badges, storefront display order, and trending visibility.
+          </p>
+        </div>
+      </div>
 
       <div className="flex flex-col gap-4">
         <form onSubmit={handleAddCategory} className="flex flex-wrap sm:flex-nowrap items-center gap-3">
@@ -125,7 +132,7 @@ export default function CategoriesTable({
                 <button
                   type="button"
                   onClick={() => setNewCatVisual("")}
-                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_1.5px_0_#1e1a18] text-espresso flex items-center justify-center hover:text-cola-red"
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_1.5px_0_#1e1a18] text-espresso flex items-center justify-center hover:text-cola-red cursor-pointer"
                 >
                   <X size={10} />
                 </button>
@@ -133,7 +140,7 @@ export default function CategoriesTable({
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-semibold text-espresso/70 hover:text-cola-red cursor-pointer flex items-center gap-1 uppercase">
+              <label className="text-[10px] font-bold text-espresso/70 hover:text-cola-red cursor-pointer flex items-center gap-1 uppercase tracking-wider">
                 <ImagePlus size={11} /> PNG
                 <input
                   type="file"
@@ -150,7 +157,7 @@ export default function CategoriesTable({
               <button
                 type="button"
                 onClick={() => setOpenIconPickerFor(openIconPickerFor === "__new__" ? null : "__new__")}
-                className="text-[10px] font-semibold text-espresso/70 hover:text-cola-red flex items-center gap-1 uppercase"
+                className="text-[10px] font-bold text-espresso/70 hover:text-cola-red flex items-center gap-1 uppercase tracking-wider cursor-pointer"
               >
                 <Sparkles size={11} /> Icon
               </button>
@@ -167,9 +174,9 @@ export default function CategoriesTable({
           <button
             type="submit"
             disabled={!newCatName.trim() || uploadingUrl}
-            className="shrink-0 bg-espresso text-cream px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50"
+            className="shrink-0 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-[#b81d1d] text-xs font-semibold uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer"
           >
-            Add
+            Add Category
           </button>
         </form>
 
@@ -184,15 +191,15 @@ export default function CategoriesTable({
         )}
       </div>
 
-      <div className="overflow-x-auto border border-espresso/10 rounded-2xl bg-white shadow-sm">
+      <div className="overflow-x-auto border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] rounded-2xl bg-white">
         <table className="w-full text-left border-collapse min-w-[500px]">
           <thead>
-            <tr className="border-b border-espresso/10 bg-cream/30 text-xs text-espresso/60 uppercase tracking-wider">
-              <th className="p-3 font-semibold w-32">Visual</th>
-              <th className="p-3 font-semibold">Category Name</th>
-              <th className="p-3 font-semibold w-24 text-center">Active</th>
-              <th className="p-3 font-semibold w-28 text-center">Order</th>
-              <th className="p-3 font-semibold w-20 text-center">Actions</th>
+            <tr className="border-b-2 border-[#1e1a18] bg-[#fbf5e9] text-xs text-espresso font-bold uppercase tracking-wider">
+              <th className="p-3.5 font-bold w-32">Visual</th>
+              <th className="p-3.5 font-bold">Category Name</th>
+              <th className="p-3.5 font-bold w-24 text-center">Active</th>
+              <th className="p-3.5 font-bold w-28 text-center">Order</th>
+              <th className="p-3.5 font-bold w-20 text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -291,10 +298,10 @@ function CategoryRow({
 
   return (
     <>
-      <tr className="border-b border-espresso/5 last:border-0 hover:bg-cream/20 transition-colors group">
-        <td className="p-3 align-middle">
+      <tr className="border-b-2 border-[#1e1a18]/10 last:border-0 hover:bg-[#fbf5e9]/60 transition-colors group">
+        <td className="p-3.5 align-middle">
           <div className="flex items-center gap-2.5">
-            <div className="relative w-10 h-10 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_2.5px_0_#1e1a18] flex items-center justify-center text-espresso shrink-0">
+            <div className="relative w-10 h-10 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] flex items-center justify-center text-espresso shrink-0">
               {visualValue ? (
                 Icon ? (
                   <Icon size={18} />
@@ -309,14 +316,14 @@ function CategoryRow({
                   type="button"
                   onClick={onRemoveVisual}
                   title="Remove visual"
-                  className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#fbf5e9] border border-[#1e1a18] shadow-[0_1px_0_#1e1a18] text-espresso flex items-center justify-center hover:text-cola-red"
+                  className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_1px_0_#1e1a18] text-espresso flex items-center justify-center hover:text-cola-red cursor-pointer"
                 >
                   <X size={10} />
                 </button>
               )}
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-semibold text-espresso/60 hover:text-cola-red cursor-pointer flex items-center gap-1 uppercase">
+              <label className="text-[10px] font-bold text-espresso/70 hover:text-cola-red cursor-pointer flex items-center gap-1 uppercase tracking-wider">
                 <ImagePlus size={10} /> PNG
                 <input
                   type="file"
@@ -332,8 +339,8 @@ function CategoryRow({
               <button
                 type="button"
                 onClick={onTogglePicker}
-                className={`text-[10px] font-semibold flex items-center gap-1 uppercase transition-colors ${
-                  isPickerOpen ? "text-cola-red" : "text-espresso/60 hover:text-cola-red"
+                className={`text-[10px] font-bold flex items-center gap-1 uppercase tracking-wider transition-colors cursor-pointer ${
+                  isPickerOpen ? "text-cola-red" : "text-espresso/70 hover:text-cola-red"
                 }`}
               >
                 <Sparkles size={10} /> Icon
@@ -341,13 +348,13 @@ function CategoryRow({
             </div>
           </div>
         </td>
-        <td className="p-3 align-middle">
-          <div className="font-semibold text-sm text-espresso truncate">{cat}</div>
-          <div className="text-[11px] text-espresso/45">
+        <td className="p-3.5 align-middle">
+          <div className="font-bold text-sm text-espresso truncate">{cat}</div>
+          <div className="text-[11px] text-espresso/50">
             {visualValue ? (Icon ? "Icon active" : "PNG active") : "No visual"}
           </div>
         </td>
-        <td className="p-3 align-middle text-center">
+        <td className="p-3.5 align-middle text-center">
           <input
             type="checkbox"
             className="w-4 h-4 accent-cola-red cursor-pointer"
@@ -355,7 +362,7 @@ function CategoryRow({
             onChange={onToggleTrending}
           />
         </td>
-        <td className="p-3 align-middle text-center">
+        <td className="p-3.5 align-middle text-center">
           {isTrending ? (
             <div className="flex items-center justify-center gap-1.5">
               <button

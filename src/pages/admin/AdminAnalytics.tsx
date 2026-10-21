@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Check } from "lucide-react";
+import { Check, Laptop, RefreshCw, Smartphone, Tablet, UserCheck } from "lucide-react";
 import AdminNav from "../../components/AdminNav";
 import {
   BarList,
@@ -18,6 +18,7 @@ import {
 import {
   fetchAnalytics,
   fetchLiveAnalytics,
+  type AnalyticsLoginEntry,
   type AnalyticsRange,
   type AnalyticsReport,
   type LiveAnalytics,
@@ -39,7 +40,7 @@ const TREND_METRICS = [
   { key: "revenue", label: "Revenue", format: inr },
 ] as const;
 
-const pct = (n: number | null) => (n == null ? ", " : `${n}%`);
+const pct = (n: number | null) => (n == null ? "—" : `${n}%`);
 
 export default function AdminAnalytics() {
   const [range, setRange] = useState<AnalyticsRange>(() => {
@@ -51,23 +52,37 @@ export default function AdminAnalytics() {
   });
   const [report, setReport] = useState<AnalyticsReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [metric, setMetric] = useState<(typeof TREND_METRICS)[number]["key"]>("visitors");
 
+  const loadReport = useCallback(
+    (silent = false) => {
+      if (!silent) setLoading(true);
+      else setRefreshing(true);
+      return fetchAnalytics(range)
+        .then((data) => {
+          setReport(data);
+          setLastUpdated(new Date());
+          setError(null);
+        })
+        .catch((err) => setError(err.message))
+        .finally(() => {
+          setLoading(false);
+          setRefreshing(false);
+        });
+    },
+    [range],
+  );
+
   useEffect(() => {
-    let cancelled = false;
-    fetchAnalytics(range)
-      .then((data) => {
-        if (cancelled) return;
-        setReport(data);
-        setError(null);
-      })
-      .catch((err) => !cancelled && setError(err.message))
-      .finally(() => !cancelled && setLoading(false));
-    return () => {
-      cancelled = true;
-    };
-  }, [range]);
+    loadReport(false);
+    const timer = setInterval(() => {
+      loadReport(true);
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [loadReport]);
 
   const chooseRange = (value: AnalyticsRange) => {
     if (value === range) return;
@@ -96,25 +111,41 @@ export default function AdminAnalytics() {
       <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
         <div>
           <h1 className="font-display text-3xl text-espresso">Analytics</h1>
-          <p className="text-sm text-espresso/50 mt-1">
-            Your own visits while signed in as admin aren't counted.
+          <p className="text-sm text-espresso/50 mt-1 flex items-center gap-2">
+            <span>Live from the database · auto-refreshes every 15s</span>
+            {lastUpdated && (
+              <span className="text-xs text-espresso/40">
+                (updated {lastUpdated.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })})
+              </span>
+            )}
           </p>
         </div>
-        <div className="flex flex-wrap gap-1 bg-espresso/5 rounded-full p-1" role="radiogroup" aria-label="Date range">
-          {RANGES.map((r) => (
-            <button
-              key={r.value}
-              role="radio"
-              aria-checked={range === r.value}
-              onClick={() => chooseRange(r.value)}
-              className={`flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                range === r.value ? "bg-cream text-espresso shadow-sm" : "text-espresso/55 hover:text-espresso"
-              }`}
-            >
-              {range === r.value && <Check size={13} strokeWidth={3} />}
-              {r.label}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => loadReport(true)}
+            disabled={refreshing}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] active:translate-y-0.5 text-espresso hover:text-cola-red transition-all cursor-pointer"
+          >
+            <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
+            Refresh
+          </button>
+          <div className="flex flex-wrap gap-1 bg-espresso/5 rounded-full p-1" role="radiogroup" aria-label="Date range">
+            {RANGES.map((r) => (
+              <button
+                key={r.value}
+                role="radio"
+                aria-checked={range === r.value}
+                onClick={() => chooseRange(r.value)}
+                className={`flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                  range === r.value ? "bg-cream text-espresso shadow-sm" : "text-espresso/55 hover:text-espresso"
+                }`}
+              >
+                {range === r.value && <Check size={13} strokeWidth={3} />}
+                {r.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -129,7 +160,7 @@ export default function AdminAnalytics() {
             <StatTile label="Orders" value={num(k.orders)} current={k.orders} previous={p.orders} />
             <StatTile
               label="Avg order value"
-              value={k.avgOrderValue != null ? inr(k.avgOrderValue) : ", "}
+              value={k.avgOrderValue != null ? inr(k.avgOrderValue) : "—"}
               current={k.avgOrderValue}
               previous={p.avgOrderValue}
             />
@@ -145,7 +176,7 @@ export default function AdminAnalytics() {
             <StatTile label="Page views" value={num(k.pageviews)} current={k.pageviews} previous={p.pageviews} />
             <StatTile
               label="Pages / session"
-              value={k.pagesPerSession != null ? String(k.pagesPerSession) : ", "}
+              value={k.pagesPerSession != null ? String(k.pagesPerSession) : "—"}
               current={k.pagesPerSession}
               previous={p.pagesPerSession}
             />
@@ -171,16 +202,27 @@ export default function AdminAnalytics() {
               isRate
             />
             <StatTile
-              label="Bag abandonment"
-              value={pct(k.cartAbandonmentRate)}
-              current={k.cartAbandonmentRate}
-              previous={p.cartAbandonmentRate}
-              lowerIsBetter
-              isRate
+              label="User logins"
+              value={num(k.signIns ?? report.logins?.length ?? 0)}
+              current={k.signIns ?? 0}
+              previous={p.signIns ?? p.signUps}
             />
           </div>
 
           <LivePanel />
+
+          {/* User Logins: Who, Which Device/Browser/OS, At What Time */}
+          <Card
+            title="User logins & devices"
+            subtitle="Which user logged in, on which device / browser / OS, and at what exact time"
+            action={
+              <Link to="/admin/customers" className="text-xs font-semibold text-cola-red hover:underline">
+                All customers →
+              </Link>
+            }
+          >
+            <UserLoginsTable rows={report.logins ?? []} />
+          </Card>
 
           {/* Trend */}
           <Card
@@ -440,43 +482,151 @@ function ProductTable({ rows }: { rows: ProductRow[] }) {
   );
 }
 
+// --- User Logins table ---------------------------------------------------------
+
+function formatExactDateTime(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+}
+
+function DeviceIcon({ device }: { device: string | null | undefined }) {
+  const lower = (device || "").toLowerCase();
+  if (lower === "mobile") return <Smartphone size={14} className="text-cola-red shrink-0" />;
+  if (lower === "tablet") return <Tablet size={14} className="text-cola-red shrink-0" />;
+  return <Laptop size={14} className="text-espresso/65 shrink-0" />;
+}
+
+function UserLoginsTable({ rows }: { rows: AnalyticsLoginEntry[] }) {
+  if (!rows.length) {
+    return <Empty>No user logins recorded in this date range yet.</Empty>;
+  }
+
+  return (
+    <div className="overflow-x-auto -mx-2">
+      <table className="w-full text-sm min-w-[680px]">
+        <thead>
+          <tr className="text-left text-[11px] uppercase tracking-wide text-espresso/50 border-b border-espresso/10">
+            <th className="font-semibold px-2 pb-2.5">User</th>
+            <th className="font-semibold px-2 pb-2.5">Event & Method</th>
+            <th className="font-semibold px-2 pb-2.5">Device · Browser · OS</th>
+            <th className="font-semibold px-2 pb-2.5 text-right">Logged in at</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-espresso/8">
+          {rows.map((r) => {
+            const displayName = r.userName || r.userEmail || r.userPhone || "Authenticated User";
+            const contactLine = [r.userEmail, r.userPhone].filter(Boolean).join(" · ");
+            const deviceParts = [
+              r.device && r.device !== "Unknown" ? r.device : "Device",
+              r.browser && r.browser !== "Unknown" ? r.browser : null,
+              r.os && r.os !== "Unknown" ? r.os : null,
+              r.country || null,
+            ].filter(Boolean);
+
+            return (
+              <tr key={r.id} className="hover:bg-espresso/3">
+                <td className="px-2 py-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-8 h-8 rounded-full bg-[#fbf5e9] border border-[#1e1a18]/30 flex items-center justify-center text-espresso shrink-0">
+                      <UserCheck size={14} />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-espresso truncate">{displayName}</span>
+                        {r.isAdmin && (
+                          <span className="text-[10px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded bg-espresso text-cream">
+                            Admin
+                          </span>
+                        )}
+                      </div>
+                      {contactLine && (
+                        <span className="block text-xs text-espresso/55 truncate">{contactLine}</span>
+                      )}
+                    </div>
+                  </div>
+                </td>
+                <td className="px-2 py-2.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span
+                      className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                        r.event === "sign_up"
+                          ? "bg-cola-red/10 text-cola-red border-cola-red/30"
+                          : "bg-espresso/5 text-espresso/80 border-espresso/15"
+                      }`}
+                    >
+                      {r.event === "sign_up" ? "New Sign-up" : "Signed in"}
+                    </span>
+                    {r.method && (
+                      <span className="text-xs text-espresso/55 capitalize">via {r.method}</span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-2 py-2.5">
+                  <div className="flex items-center gap-2 text-espresso/85">
+                    <DeviceIcon device={r.device} />
+                    <span className="font-medium">{deviceParts.join(" · ")}</span>
+                  </div>
+                </td>
+                <td className="px-2 py-2.5 text-right tabular-nums">
+                  <span className="block font-semibold text-espresso">{formatExactDateTime(r.at)}</span>
+                  <span className="block text-xs text-espresso/45">{ago(r.at)}</span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 // --- Live -------------------------------------------------------------------------
 
 const LIVE_REFRESH_MS = 15000;
 
 function describe(e: LiveAnalytics["feed"][number]) {
   const money = e.value != null ? ` · ${inr(e.value)}` : "";
+  const who = e.userName || e.userEmail ? `${e.userName || e.userEmail}: ` : "";
   switch (e.name) {
     case "page_view":
-      return `Viewed ${e.path ?? "a page"}`;
+      return `${who}Viewed ${e.path ?? "a page"}`;
     case "product_view":
-      return `Looked at ${e.product ?? "a product"}`;
+      return `${who}Looked at ${e.product ?? "a product"}`;
     case "image_view":
-      return `Swiped to "${e.label}" on ${e.product ?? "a product"}`;
+      return `${who}Swiped to "${e.label}" on ${e.product ?? "a product"}`;
     case "option_select":
-      return `Picked "${e.label}" on ${e.product ?? "a product"}`;
+      return `${who}Picked "${e.label}" on ${e.product ?? "a product"}`;
     case "add_to_cart":
-      return `Added ${e.product ?? "a product"} to bag${money}`;
+      return `${who}Added ${e.product ?? "a product"} to bag${money}`;
     case "remove_from_cart":
-      return `Removed ${e.product ?? "a product"} from bag`;
+      return `${who}Removed ${e.product ?? "a product"} from bag`;
     case "cart_open":
-      return "Opened their bag";
+      return `${who}Opened their bag`;
     case "checkout_start":
-      return `Started checkout${money}`;
+      return `${who}Started checkout${money}`;
     case "order_placed":
-      return `Placed an order${money} 🎉`;
+      return `${who}Placed an order${money} 🎉`;
     case "sign_up":
-      return "Created an account";
+      return `${who || "New user "}Created an account`;
     case "sign_in":
-      return "Signed in";
+      return `${who || "User "}Signed in`;
     case "newsletter_signup":
-      return "Joined the newsletter";
+      return `${who}Joined the newsletter`;
     case "contact_submit":
-      return "Sent a contact message";
+      return `${who}Sent a contact message`;
     case "shop_filter":
-      return "Filtered the shop";
+      return `${who}Filtered the shop`;
     default:
-      return e.name;
+      return `${who}${e.name}`;
   }
 }
 
@@ -531,11 +681,27 @@ function LivePanel() {
           <ul className="flex flex-col divide-y divide-espresso/8 max-h-72 overflow-y-auto pr-1">
             {live.feed.map((e) => (
               <li key={e.id} className="flex items-center justify-between gap-3 py-2 text-sm">
-                <span className={`min-w-0 truncate ${e.name === "order_placed" ? "font-semibold text-cola-red" : "text-espresso/85"}`}>
+                <span
+                  className={`min-w-0 truncate ${
+                    e.name === "order_placed"
+                      ? "font-semibold text-cola-red"
+                      : e.name === "sign_in" || e.name === "sign_up"
+                        ? "font-semibold text-espresso"
+                        : "text-espresso/85"
+                  }`}
+                >
                   {describe(e)}
                 </span>
-                <span className="shrink-0 text-xs text-espresso/45 tabular-nums">
-                  {[e.device, e.country, e.source !== "direct" ? `via ${e.source}` : null].filter(Boolean).join(" · ")}
+                <span className="shrink-0 text-xs text-espresso/45 tabular-nums" title={formatExactDateTime(e.at)}>
+                  {[
+                    e.device,
+                    e.browser && e.browser !== "Unknown" ? e.browser : null,
+                    e.os && e.os !== "Unknown" ? e.os : null,
+                    e.country,
+                    e.source !== "direct" ? `via ${e.source}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                   {" · "}
                   {ago(e.at)}
                 </span>

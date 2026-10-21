@@ -17,7 +17,6 @@ import skullDiceCharm from "../assets/charm-skull-dice.png";
 import fairyCharm from "../assets/fairy.png";
 import batmanCharm from "../assets/batman.png";
 import marlboroCharm from "../assets/marlboro.png";
-import { categories } from "../data/products";
 
 const heroCharms = [
   { image: fairyCharm, style: "top-[8%] left-[6%]", size: 250, float: 4.5, tilt: -7 },
@@ -39,10 +38,12 @@ export default function Home() {
     fetchStorefront().then(setStorefront).catch(console.error);
   }, []);
 
-  const homeCategories =
-    storefront && storefront.trendingCategories.length > 0
-      ? storefront.trendingCategories
-      : categories;
+  const homeCategories = useMemo(() => {
+    if (storefront && storefront.trendingCategories.length > 0) {
+      return storefront.trendingCategories;
+    }
+    return Array.from(new Set((products ?? []).map((p) => p.category).filter(Boolean)));
+  }, [storefront, products]);
 
   const bestsellers = useMemo(() => {
     const all = products ?? [];
@@ -189,10 +190,31 @@ export default function Home() {
           </Reveal>
           <Reveal delay={0.15}>
             <div className="grid grid-cols-2 gap-8 bg-cream/5 rounded-3xl p-10 border-2 border-cream/20 shadow-[0_6px_0_rgba(0,0,0,0.35)]">
-              <StatCounter value={52} suffix="K+" label="Charms Shipped" />
-              <StatCounter value={4.9} suffix="/5" label="Average Rating" decimals={1} />
-              <StatCounter value={120} suffix="+" label="Charm Designs" />
-              <StatCounter value={18} suffix="K+" label="Bags Charmed" />
+              <StatCounter
+                value={storefront?.stats?.charmDesigns ?? (products ?? []).length}
+                label="Charm Designs"
+              />
+              <StatCounter
+                value={storefront?.stats?.collectionsCount ?? homeCategories.length}
+                label="Collections"
+              />
+              <StatCounter
+                value={storefront?.stats?.charmsShipped ?? 0}
+                label="Charms Ordered"
+              />
+              {storefront?.stats?.averageRating != null ? (
+                <StatCounter
+                  value={storefront.stats.averageRating}
+                  suffix="/5"
+                  label="Verified Rating"
+                  decimals={1}
+                />
+              ) : (
+                <StatCounter
+                  value={storefront?.stats?.totalReviews ?? 0}
+                  label="Verified Reviews"
+                />
+              )}
             </div>
           </Reveal>
         </div>

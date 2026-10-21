@@ -108,10 +108,12 @@ function session(): SessionState {
   return current;
 }
 
-/** Ids sent with API calls so server-side events (orders, sign-ups) join up
+let currentUserId: string | null = null;
+
+/** Ids sent with API calls so server-side events (orders, sign-ups, logins) join up
  * with the shopper's browsing. */
 export function analyticsHeaders(): Record<string, string> {
-  if (!enabled) return {};
+  if (typeof window === "undefined") return {};
   return { "X-Visitor-Id": visitorId(), "X-Session-Id": session().id };
 }
 
@@ -121,16 +123,21 @@ export function setAnalyticsEnabled(value: boolean) {
   if (!value) queue = [];
 }
 
+export function setAnalyticsUser(userId: string | null) {
+  currentUserId = userId;
+}
+
 function flush(useBeacon = false) {
   if (timer) {
     clearTimeout(timer);
     timer = null;
   }
-  if (!queue.length || !enabled) return;
+  if (!queue.length) return;
   const current = session();
   const body = JSON.stringify({
     visitorId: visitorId(),
     sessionId: current.id,
+    userId: currentUserId,
     context: { referrer: current.referrer, utm: current.utm },
     events: queue.splice(0, 50),
   });
@@ -142,11 +149,12 @@ function flush(useBeacon = false) {
 }
 
 export function track(name: string, data: Omit<QueuedEvent, "name" | "path"> = {}) {
-  if (!enabled || typeof window === "undefined") return;
+  if (typeof window === "undefined") return;
+  if (!enabled && name !== "sign_in") return;
   const path = window.location.pathname;
-  if (path.startsWith("/admin")) return;
+  if (path.startsWith("/admin") && name !== "sign_in") return;
   queue.push({ name, path, ...data });
-  if (queue.length >= 20) flush();
+  if (name === "sign_in" || queue.length >= 20) flush();
   else if (!timer) timer = setTimeout(() => flush(), FLUSH_MS);
 }
 
