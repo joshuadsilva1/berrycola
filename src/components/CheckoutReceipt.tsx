@@ -114,6 +114,16 @@ export default function CheckoutReceipt() {
     }
   };
 
+  const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
   const triggerReprint = () => {
     setIsPrinting(true);
     setPrintKey((k) => k + 1);
@@ -146,9 +156,18 @@ export default function CheckoutReceipt() {
     if (!firebaseUser || !profile || !liveItems.length || isPlacingOrder || completedOrder) return;
     setIsPlacingOrder(true);
     setOrderError(null);
+    
     const snapshot = [...liveItems];
     setPrintedItemsSnapshot(snapshot);
+
     try {
+      // 1. Load Razorpay SDK first
+      const sdkLoaded = await loadRazorpayScript();
+      if (!sdkLoaded) {
+        throw new Error("Razorpay failed to load. Please check your internet connection.");
+      }
+
+      // 2. Create the order in your database (Status will be pending/unpaid initially)
       const order = await placeOrder({
         customer: {
           name: profile.name || firebaseUser.displayName || "Collector",
@@ -166,17 +185,83 @@ export default function CheckoutReceipt() {
         })),
         customerNote: customerNote.trim() || undefined,
       });
-      setCompletedOrder(order);
-      cart.clearCart();
-      try {
-        sessionStorage.setItem(LAST_RECEIPT_STORAGE_KEY, JSON.stringify({ order, items: snapshot }));
-      } catch {}
-      triggerReprint();
+
+      // 3. Define backend API base URL
+      const API_BASE = import.meta.env.DEV ? "http://127.0.0.1:5001/api" : "/api";
+
+      // 4. Request a Razorpay Order ID from your backend
+      const rzpOrderResponse = await fetch(`${API_BASE}/payment/create-order`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          amount: finalTotal, 
+          receipt: order.id // Pass your DB order ID to link them
+        }), 
+      });
+      const rzpOrderData = await rzpOrderResponse.json();
+
+      if (rzpOrderData.error) {
+        throw new Error("Failed to initialize payment gateway.");
+      }
+
+      // 5. Open the Razorpay Payment Modal
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Your public Razorpay Key ID
+        amount: rzpOrderData.amount,
+        currency: rzpOrderData.currency,
+        name: "BerryCola",
+        description: "BerryCola Order",
+        order_id: rzpOrderData.id,
+        handler: async function (response: any) {
+          try {
+            // 6. Payment successful on frontend! Verify signature with backend
+            const verifyRes = await fetch(`${API_BASE}/payment/verify`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(response),
+            });
+            const verifyData = await verifyRes.json();
+
+            if (verifyData.status === "success") {
+              // 7. VERIFIED! Now we show the receipt and clear the cart
+              setCompletedOrder(order);
+              cart.clearCart();
+              try {
+                sessionStorage.setItem(LAST_RECEIPT_STORAGE_KEY, JSON.stringify({ order, items: snapshot }));
+              } catch {}
+              triggerReprint();
+            } else {
+              setOrderError("Payment verification failed! Please contact support.");
+            }
+          } catch (err) {
+            setOrderError("Error verifying payment.");
+          }
+        },
+        prefill: {
+          name: profile.name || firebaseUser.displayName || "",
+          email: profile.email || firebaseUser.email || "",
+          contact: profile.phone || firebaseUser.phoneNumber || "",
+        },
+        theme: {
+          color: "#d51f1f", // BerryCola Red
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      
+      // Handle if user closes the modal or payment fails
+      rzp.on("payment.failed", function (response: any) {
+        setOrderError(`Payment failed: ${response.error.description}`);
+      });
+      
+      rzp.open();
+
     } catch (err: any) {
       setPrintedItemsSnapshot(null);
       setOrderError(err?.message || "Couldn't prepare your order.");
     } finally {
-      setIsPlacingOrder(false);
+      // Re-enable the button so they can try again if they closed the popup
+      setIsPlacingOrder(false); 
     }
   };
 

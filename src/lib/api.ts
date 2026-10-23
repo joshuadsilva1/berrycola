@@ -194,6 +194,10 @@ export function fetchMyOrders() {
   return authRequest<Order[]>("/orders/mine");
 }
 
+export function syncMyOrderTracking(id: string) {
+  return authRequest<Order>(`/orders/mine/${encodeURIComponent(id)}/sync`, { method: "POST" });
+}
+
 export function fetchOrderUpdates() {
   return authRequest<OrderUpdate[]>("/orders/mine/updates");
 }

@@ -155,7 +155,9 @@ export default function IntroSplash({ onFinish, onUnlockSound }: IntroSplashProp
 
   const canAnimate = () => {
     if (phase === "waiting") {
-      return { rotate: [0, -2, 2, 0], x: 0, y: [0, -8, 0], scale: 1 };
+      // Keep the can vertically anchored. The hover drift is especially
+      // noticeable on short mobile viewports as the browser chrome shifts.
+      return { rotate: [0, -2, 2, 0], x: 0, y: 0, scale: 1 };
     }
     if (phase === "shaking") {
       return { rotate: SHAKE_ROTATE, x: SHAKE_X, y: SHAKE_Y, scale: 1 };

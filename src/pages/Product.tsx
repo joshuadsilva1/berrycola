@@ -40,7 +40,7 @@ export default function Product() {
 }
 
 function ProductDetail({ product }: { product: ProductType }) {
-  const { data: categoryProducts } = useProducts(product.category);
+  const { data: catalogProducts } = useProducts();
   const [qty, setQty] = useState(1);
   const [copiedLink, setCopiedLink] = useState(false);
   const [pageDetails, setPageDetails] = useState<ProductPageDetails | null>(null);
@@ -124,7 +124,10 @@ function ProductDetail({ product }: { product: ProductType }) {
   const maxStock = product.stockQuantity != null ? product.stockQuantity : null;
   const productSoldOut = product.inStock === false || (maxStock !== null && maxStock <= 0);
   const canAdd = !productSoldOut && (!hasVariants || selected !== null);
-  const related = (categoryProducts ?? []).filter((p) => p.id !== product.id).slice(0, 4);
+  const related = (catalogProducts ?? [])
+    .filter((p) => p.id !== product.id)
+    .sort((a, b) => Number(b.category === product.category) - Number(a.category === product.category))
+    .slice(0, 4);
 
   // Resolve delivery window from product fields or admin storefront defaults
   const minDays = product.deliveryMinDays ?? pageDetails?.defaultMinDays ?? null;

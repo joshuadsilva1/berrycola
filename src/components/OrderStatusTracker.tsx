@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, Truck } from "lucide-react";
 import { ORDER_STATUS_STEPS, STATUS_LABELS, statusStepIndex } from "../lib/orderStatus";
 import type { Order } from "../lib/api";
 
@@ -15,6 +15,7 @@ export default function OrderStatusTracker({ order }: { order: Order }) {
 
   return (
     <div>
+      {/* Progress Bar Status Steps */}
       <div className="flex items-center">
         {ORDER_STATUS_STEPS.map((step, i) => {
           const done = i <= activeIndex;
@@ -48,29 +49,33 @@ export default function OrderStatusTracker({ order }: { order: Order }) {
         })}
       </div>
 
+      {/* Shiprocket Tracking Section */}
       {(order.trackingId || order.carrier) && (
-        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-espresso/70">
-          {order.carrier && (
-            <span>
-              Carrier: <span className="text-espresso font-medium">{order.carrier}</span>
-            </span>
-          )}
-          {order.trackingId && (
-            <span>
-              Tracking ID:{" "}
-              {order.trackingUrl ? (
-                <a
-                  href={order.trackingUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-cola-red font-medium hover:underline"
-                >
-                  {order.trackingId}
-                </a>
-              ) : (
-                <span className="text-espresso font-medium">{order.trackingId}</span>
+        <div className="mt-6 p-4 rounded-xl border border-espresso/10 bg-white shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h4 className="text-xs font-bold uppercase text-espresso tracking-wide flex items-center gap-1.5">
+              <Truck size={14} className="text-cola-red" /> 
+              Shipping Details
+            </h4>
+            <div className="mt-1 text-[11px] text-espresso/70 flex flex-col gap-0.5">
+              {order.carrier && (
+                <span>Carrier: <span className="font-semibold text-espresso">{order.carrier}</span></span>
               )}
-            </span>
+              {order.trackingId && (
+                <span>Tracking ID: <span className="font-semibold text-espresso">{order.trackingId}</span></span>
+              )}
+            </div>
+          </div>
+
+          {order.trackingId && (
+            <a
+              href={order.trackingUrl || `https://shiprocket.co/tracking/${order.trackingId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-1.5 bg-cola-red text-cream px-5 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-wider active:translate-y-0.5 transition-all shadow-[0_2px_0_#1e1a18] border-2 border-[#1e1a18] hover:bg-[#b81d1d]"
+            >
+              Track Package
+            </a>
           )}
         </div>
       )}
