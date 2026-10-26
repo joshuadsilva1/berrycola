@@ -153,6 +153,8 @@ export interface Order {
   discountTotal?: number;
   total?: number;
   status: string;
+  paymentStatus?: string;
+  refundStatus?: string | null;
   carrier: string | null;
   trackingId: string | null;
   trackingUrl: string | null;
@@ -188,6 +190,24 @@ export interface OrderUpdate {
 
 export function placeOrder(payload: OrderPayload) {
   return authRequest<Order>("/orders", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function createRazorpayOrder(orderId: string) {
+  return authRequest<{ id: string; amount: number; currency: string }>("/payment/create-order", {
+    method: "POST",
+    body: JSON.stringify({ orderId }),
+  });
+}
+
+export function verifyRazorpayPayment(payload: {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}) {
+  return authRequest<{ status: "success"; order: Order }>("/payment/verify", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export function fetchMyOrders() {
@@ -259,6 +279,14 @@ export function updateOrderTracking(id: string, payload: TrackingUpdate) {
 
 export function syncOrderTracking(id: string) {
   return authRequest<Order>(`/admin/orders/${id}/sync`, { method: "POST" });
+}
+
+export function createShiprocketShipment(id: string) {
+  return authRequest<Order>(`/admin/orders/${id}/shiprocket`, { method: "POST" });
+}
+
+export function retryOrderRefund(id: string) {
+  return authRequest<Order>(`/admin/orders/${id}/refund`, { method: "POST" });
 }
 
 export interface ProductInput {

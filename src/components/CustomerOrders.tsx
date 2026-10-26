@@ -97,6 +97,7 @@ export default function CustomerOrders() {
                 <span className="inline-flex rounded-full border border-espresso/15 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-espresso">
                   {STATUS_LABELS[order.status as keyof typeof STATUS_LABELS] ?? order.status.replaceAll("_", " ")}
                 </span>
+                {order.refundStatus && <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-amber-800">Refund {order.refundStatus}</p>}
                 <p className="mt-1.5 text-sm font-bold text-espresso">₹{(order.total ?? order.subtotal).toLocaleString("en-IN")}</p>
               </div>
             </header>

@@ -48,13 +48,8 @@ function PageViewTracker() {
 }
 
 function ContentGuard({ storeConfig, children }: { storeConfig: any; children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth();
+  const { user, profile } = useAuth();
   const location = useLocation();
-
-  // Wait until storefront config finishes fetching
-  if (!storeConfig || loading) {
-    return <div className="min-h-screen bg-cream" />;
-  }
 
   const isAdmin = Boolean(profile?.isAdmin || user?.isAdmin || (user as any)?.is_admin || (user as any)?.role === "admin");
   const isAuthOrAdminRoute =
@@ -62,7 +57,7 @@ function ContentGuard({ storeConfig, children }: { storeConfig: any; children: R
     location.pathname.startsWith("/login");
 
   // Block non-admins from all storefront pages when comingSoon is active
-  if (Boolean(storeConfig.comingSoon) && !isAdmin && !isAuthOrAdminRoute) {
+  if (Boolean(storeConfig?.comingSoon) && !isAdmin && !isAuthOrAdminRoute) {
     return <ComingSoon />;
   }
 

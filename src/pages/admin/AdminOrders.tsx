@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import {
   fetchAdminOrders,
+  createShiprocketShipment,
+  retryOrderRefund,
   syncOrderTracking,
   updateOrderTracking,
   type Order,
@@ -44,6 +46,14 @@ export default function AdminOrders() {
     replaceOrder(await syncOrderTracking(id));
   };
 
+  const handleCreateShipment = async (id: string) => {
+    replaceOrder(await createShiprocketShipment(id));
+  };
+
+  const handleRetryRefund = async (id: string) => {
+    replaceOrder(await retryOrderRefund(id));
+  };
+
   return (
     <div className="min-h-screen px-5 sm:px-8 pt-28 pb-20 max-w-6xl mx-auto">
       <AdminNav />
@@ -66,7 +76,7 @@ export default function AdminOrders() {
 
       <div className="flex flex-col gap-4">
         {orders.map((order) => (
-          <AdminOrderRow key={order.id} order={order} onUpdate={handleUpdate} onSync={handleSync} />
+          <AdminOrderRow key={order.id} order={order} onUpdate={handleUpdate} onSync={handleSync} onCreateShipment={handleCreateShipment} onRetryRefund={handleRetryRefund} />
         ))}
         {!loading && orders.length === 0 && (
           <p className="text-espresso/50 text-sm">No orders found.</p>
@@ -80,10 +90,14 @@ function AdminOrderRow({
   order,
   onUpdate,
   onSync,
+  onCreateShipment,
+  onRetryRefund,
 }: {
   order: Order;
   onUpdate: (id: string, payload: TrackingUpdate) => Promise<void>;
   onSync: (id: string) => Promise<void>;
+  onCreateShipment: (id: string) => Promise<void>;
+  onRetryRefund: (id: string) => Promise<void>;
 }) {
   const [status, setStatus] = useState(order.status);
   const [trackingId, setTrackingId] = useState(order.trackingId ?? "");
@@ -91,15 +105,21 @@ function AdminOrderRow({
   const [trackingUrl, setTrackingUrl] = useState(order.trackingUrl ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [shipmentError, setShipmentError] = useState<string | null>(null);
+  const [refundError, setRefundError] = useState<string | null>(null);
+  const [creatingShipment, setCreatingShipment] = useState(false);
+  const [retryingRefund, setRetryingRefund] = useState(false);
 
   // Courier updates can change the status and carrier behind the form's back.
   const [lastSeen, setLastSeen] = useState(order);
   if (order !== lastSeen) {
     setLastSeen(order);
     setStatus(order.status);
+    setTrackingId(order.trackingId ?? "");
     setCarrier(order.carrier ?? "");
     setTrackingUrl(order.trackingUrl ?? "");
   }
@@ -125,12 +145,39 @@ function AdminOrderRow({
   const handleSave = async () => {
     setSaving(true);
     setSaved(false);
+    setSaveError(null);
     try {
       await onUpdate(order.id, { status, trackingId, carrier, trackingUrl });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setSaveError((err as Error).message || "Couldn't save this order.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCreateShipment = async () => {
+    setCreatingShipment(true);
+    setShipmentError(null);
+    try {
+      await onCreateShipment(order.id);
+    } catch (err) {
+      setShipmentError((err as Error).message || "Couldn't create Shiprocket shipment.");
+    } finally {
+      setCreatingShipment(false);
+    }
+  };
+
+  const handleRetryRefund = async () => {
+    setRetryingRefund(true);
+    setRefundError(null);
+    try {
+      await onRetryRefund(order.id);
+    } catch (err) {
+      setRefundError((err as Error).message || "Couldn't issue Razorpay refund.");
+    } finally {
+      setRetryingRefund(false);
     }
   };
 
@@ -145,6 +192,11 @@ function AdminOrderRow({
           </p>
         </div>
         <span className="text-sm font-semibold text-espresso">₹{order.subtotal}</span>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-4 text-[11px] font-semibold uppercase tracking-wide">
+        <span className="rounded-full bg-white border border-espresso/15 px-3 py-1">Payment: {order.paymentStatus ?? "unknown"}</span>
+        {order.refundStatus && <span className="rounded-full bg-amber-50 border border-amber-200 px-3 py-1">Refund: {order.refundStatus}</span>}
       </div>
 
       <ul className="mb-4 flex flex-col gap-1 text-sm text-espresso/80">
@@ -223,6 +275,38 @@ function AdminOrderRow({
           </button>
         )}
       </div>
+      {saveError && <p role="alert" className="text-cola-red text-xs mt-2">{saveError}</p>}
+      {status === "cancelled" && order.paymentStatus === "paid" && order.refundStatus !== "pending" && order.refundStatus !== "processed" && (
+        <p className="mt-3 text-xs font-semibold text-amber-800">Saving as Cancelled requests a full Razorpay refund. The cancellation is saved only after Razorpay accepts the request.</p>
+      )}
+      {order.paymentStatus === "paid" && !order.trackingId && order.status !== "cancelled" && (
+        <div className="mt-4 border-t border-espresso/10 pt-4">
+          <button
+            type="button"
+            onClick={handleCreateShipment}
+            disabled={creatingShipment}
+            className="px-4 py-2 rounded-full bg-espresso text-cream text-xs font-semibold disabled:opacity-50"
+          >
+            {creatingShipment ? "Creating shipment…" : "Create Shiprocket shipment + AWB"}
+          </button>
+          <p className="mt-1.5 text-[11px] text-espresso/55">Uses the configured pickup location and parcel dimensions. It creates the shipment and assigns an AWB; pickup booking remains in Shiprocket.</p>
+          {shipmentError && <p role="alert" className="text-cola-red text-xs mt-2">{shipmentError}</p>}
+        </div>
+      )}
+      {order.refundStatus === "failed" && (
+        <div className="mt-4 border-t border-espresso/10 pt-4">
+          <button
+            type="button"
+            onClick={handleRetryRefund}
+            disabled={retryingRefund}
+            className="px-4 py-2 rounded-full border border-cola-red text-cola-red text-xs font-semibold disabled:opacity-50"
+          >
+            {retryingRefund ? "Retrying refund…" : "Retry full Razorpay refund"}
+          </button>
+          <p className="mt-1.5 text-[11px] text-espresso/55">Check the Razorpay Dashboard before retrying if the previous request timed out.</p>
+          {refundError && <p role="alert" className="text-cola-red text-xs mt-2">{refundError}</p>}
+        </div>
+      )}
       {syncError && <p className="text-cola-red text-xs mt-2">{syncError}</p>}
       {showHistory && (
         <div className="mt-4 pt-4 border-t border-espresso/10">

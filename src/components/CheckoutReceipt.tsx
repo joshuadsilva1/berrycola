@@ -13,7 +13,7 @@ import receiptPrintWav from "../assets/receipt-print.wav";
 import { useCart } from "../context/CartContext";
 import { useAuth, isProfileComplete } from "../context/AuthContext";
 import { variantPrice } from "../data/products";
-import { placeOrder, type Order } from "../lib/api";
+import { createRazorpayOrder, placeOrder, verifyRazorpayPayment, type Order } from "../lib/api";
 
 const BARCODE_PATTERN = [
   3, 1, 2, 1, 3, 2, 1, 1, 3, 1, 2, 2, 1, 3, 1, 2, 1, 1, 3, 2, 1, 2, 3, 1, 1, 2,
@@ -154,6 +154,10 @@ export default function CheckoutReceipt() {
 
   const handleProceedToPayment = async () => {
     if (!firebaseUser || !profile || !liveItems.length || isPlacingOrder || completedOrder) return;
+    if (!import.meta.env.VITE_RAZORPAY_KEY_ID) {
+      setOrderError("Razorpay key ID is missing. Add VITE_RAZORPAY_KEY_ID to the frontend environment.");
+      return;
+    }
     setIsPlacingOrder(true);
     setOrderError(null);
     
@@ -187,26 +191,12 @@ export default function CheckoutReceipt() {
       });
 
       // 3. Define backend API base URL
-      const API_BASE = import.meta.env.DEV ? "http://127.0.0.1:5001/api" : "/api";
-
       // 4. Request a Razorpay Order ID from your backend
-      const rzpOrderResponse = await fetch(`${API_BASE}/payment/create-order`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          amount: finalTotal, 
-          receipt: order.id // Pass your DB order ID to link them
-        }), 
-      });
-      const rzpOrderData = await rzpOrderResponse.json();
-
-      if (rzpOrderData.error) {
-        throw new Error("Failed to initialize payment gateway.");
-      }
+      const rzpOrderData = await createRazorpayOrder(order.id);
 
       // 5. Open the Razorpay Payment Modal
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Your public Razorpay Key ID
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: rzpOrderData.amount,
         currency: rzpOrderData.currency,
         name: "BerryCola",
@@ -215,19 +205,14 @@ export default function CheckoutReceipt() {
         handler: async function (response: any) {
           try {
             // 6. Payment successful on frontend! Verify signature with backend
-            const verifyRes = await fetch(`${API_BASE}/payment/verify`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(response),
-            });
-            const verifyData = await verifyRes.json();
+            const verifyData = await verifyRazorpayPayment(response);
 
             if (verifyData.status === "success") {
               // 7. VERIFIED! Now we show the receipt and clear the cart
-              setCompletedOrder(order);
+              setCompletedOrder(verifyData.order);
               cart.clearCart();
               try {
-                sessionStorage.setItem(LAST_RECEIPT_STORAGE_KEY, JSON.stringify({ order, items: snapshot }));
+                sessionStorage.setItem(LAST_RECEIPT_STORAGE_KEY, JSON.stringify({ order: verifyData.order, items: snapshot }));
               } catch {}
               triggerReprint();
             } else {
@@ -406,7 +391,7 @@ export default function CheckoutReceipt() {
           />
           {completedOrder ? (
             <div className="mt-4 rounded-xl bg-amber-50 border border-amber-300 p-3 text-sm text-amber-950">
-              Order #{completedOrder.id.slice(0, 8).toUpperCase()} is prepared. Razorpay checkout can be connected here once the Razorpay key and server payment-order endpoint are configured.
+              Payment received for order #{completedOrder.id.slice(0, 8).toUpperCase()}. Your order is confirmed.
             </div>
           ) : (
             <>
