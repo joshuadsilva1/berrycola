@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import Navbar from "./components/Navbar";
+import AnnouncementBanner from "./components/AnnouncementBanner";
 import Footer from "./components/Footer";
 import CartDrawer from "./components/CartDrawer";
 import IntroSplash from "./components/IntroSplash";
@@ -21,6 +22,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Account from "./pages/Account";
+import CustomerOrders from "./components/CustomerOrders";
 import CheckoutReceipt from "./components/CheckoutReceipt";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminProducts from "./pages/admin/AdminProducts";
@@ -30,6 +32,8 @@ import AdminMessages from "./pages/admin/AdminMessages";
 import AdminStorefront from "./pages/admin/AdminStorefront";
 import AdminPromos from "./pages/admin/AdminPromos";
 import ComingSoon from "./pages/ComingSoon";
+import NewsletterUnsubscribe from "./pages/NewsletterUnsubscribe";
+import Policies from "./pages/Policies";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -54,7 +58,8 @@ function ContentGuard({ storeConfig, children }: { storeConfig: any; children: R
   const isAdmin = Boolean(profile?.isAdmin || user?.isAdmin || (user as any)?.is_admin || (user as any)?.role === "admin");
   const isAuthOrAdminRoute =
     location.pathname.startsWith("/admin") ||
-    location.pathname.startsWith("/login");
+    location.pathname.startsWith("/login") ||
+    location.pathname === "/newsletter/unsubscribe";
 
   // Block non-admins from all storefront pages when comingSoon is active
   if (Boolean(storeConfig?.comingSoon) && !isAdmin && !isAuthOrAdminRoute) {
@@ -103,21 +108,27 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    fetchStorefront()
-      .then((data) => {
+    const loadStorefront = () => {
+      fetchStorefront().then((data) => {
         setStoreConfig(data);
         if (showIntro && (data.splashEnabled === false || data.comingSoon)) {
           introPlayedThisVisit = true;
           setShowIntro(false);
         }
-      })
-      .catch((err) => console.error("Failed to load storefront config:", err));
+      }).catch((err) => console.error("Failed to load storefront config:", err));
+    };
+    loadStorefront();
+    window.addEventListener("bc-storefront-settings-updated", loadStorefront);
+    return () => window.removeEventListener("bc-storefront-settings-updated", loadStorefront);
   }, [showIntro]);
 
   const finishIntro = () => {
     introPlayedThisVisit = true;
     setShowIntro(false);
   };
+
+  const announcementMessages: string[] = storeConfig?.announcementMessages ?? [storeConfig?.announcementText ?? "New drop every Friday"];
+  const announcementVisible = storeConfig?.announcementEnabled !== false && announcementMessages.some((message) => message.trim());
 
   return (
     <AuthProvider>
@@ -133,21 +144,25 @@ export default function App() {
           <PageViewTracker />
 
           <ContentGuard storeConfig={storeConfig}>
-            <Navbar />
-            <OrderUpdateBanner />
+            <AnnouncementBanner visible={announcementVisible} messages={announcementMessages} />
+            <Navbar announcementVisible={announcementVisible} />
+            <OrderUpdateBanner announcementVisible={announcementVisible} />
             <CartDrawer />
 
-            <main>
+            <main className={announcementVisible ? "pt-8" : undefined}>
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/shop" element={<Shop />} />
                 <Route path="/product/:id" element={<Product />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/policies" element={<Policies />} />
+                <Route path="/newsletter/unsubscribe" element={<NewsletterUnsubscribe />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/checkout" element={<CheckoutReceipt />} />
 
                 <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
+                <Route path="/orders" element={<RequireAuth><CustomerOrders /></RequireAuth>} />
 
                 <Route path="/admin" element={<Navigate to="/admin/analytics" replace />} />
                 <Route path="/admin/orders" element={<RequireAdmin><AdminOrders /></RequireAdmin>} />

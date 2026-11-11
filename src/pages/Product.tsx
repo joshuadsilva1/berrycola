@@ -44,6 +44,7 @@ function ProductDetail({ product }: { product: ProductType }) {
   const [qty, setQty] = useState(1);
   const [copiedLink, setCopiedLink] = useState(false);
   const [pageDetails, setPageDetails] = useState<ProductPageDetails | null>(null);
+  const [reviewSectionEnabled, setReviewSectionEnabled] = useState(true);
   const { addItem } = useCart();
 
   const variants = product.variants ?? [];
@@ -53,7 +54,10 @@ function ProductDetail({ product }: { product: ProductType }) {
 
   useEffect(() => {
     fetchStorefront()
-      .then((s) => setPageDetails(s.productPageDetails ?? {}))
+      .then((s) => {
+        setPageDetails(s.productPageDetails ?? {});
+        setReviewSectionEnabled(s.reviewSectionEnabled !== false);
+      })
       .catch(() => setPageDetails({}));
   }, []);
 
@@ -387,9 +391,11 @@ function ProductDetail({ product }: { product: ProductType }) {
       </div>
 
       {/* VERIFIED BUYER REVIEWS SECTION */}
-      <div className="mt-16">
-        <ReviewsSection productId={product.id} productName={product.name} />
-      </div>
+      {reviewSectionEnabled && (
+        <div className="mt-16">
+          <ReviewsSection productId={product.id} productName={product.name} />
+        </div>
+      )}
 
       {related.length > 0 && (
         <div className="mx-auto max-w-7xl px-5 sm:px-8">

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Copy, Mail } from "lucide-react";
+import { Copy, Mail, Send } from "lucide-react";
 import AdminNav from "../../components/AdminNav";
-import { fetchMessages, type AdminMessages as Messages } from "../../lib/api";
+import { fetchMessages, sendNewsletterCampaign, type AdminMessages as Messages } from "../../lib/api";
 
 const when = (iso: string | null) =>
   iso
@@ -12,6 +12,11 @@ export default function AdminMessages() {
   const [data, setData] = useState<Messages | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+  const [campaignMessage, setCampaignMessage] = useState<string | null>(null);
+  const [campaignError, setCampaignError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMessages()
@@ -27,6 +32,24 @@ export default function AdminMessages() {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // Clipboard blocked — nothing else to do.
+    }
+  };
+
+  const sendCampaign = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!window.confirm(`Send this marketing email to all ${data?.subscribersTotal ?? 0} newsletter subscribers?`)) return;
+    setSending(true);
+    setCampaignError(null);
+    setCampaignMessage(null);
+    try {
+      const result = await sendNewsletterCampaign({ subject, body });
+      setCampaignMessage(`Campaign queued for ${result.recipients} subscribers.`);
+      setSubject("");
+      setBody("");
+    } catch (err) {
+      setCampaignError((err as Error).message || "Couldn't send the campaign.");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -84,7 +107,7 @@ export default function AdminMessages() {
             <ul className="border border-espresso/10 rounded-2xl divide-y divide-espresso/8">
               {data.subscribers.map((s) => (
                 <li key={s.email} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
-                  <span className="truncate text-espresso/85">{s.email}</span>
+                  <span className="min-w-0 flex-1 break-all whitespace-normal text-espresso/85">{s.email}</span>
                   <span className="text-xs text-espresso/45 shrink-0">{when(s.createdAt)}</span>
                 </li>
               ))}
@@ -92,6 +115,42 @@ export default function AdminMessages() {
                 <li className="px-4 py-6 text-sm text-center text-espresso/45">No subscribers yet.</li>
               )}
             </ul>
+            <form onSubmit={sendCampaign} className="mt-6 rounded-2xl border border-espresso/10 p-4">
+              <h3 className="font-display text-xl text-espresso">Email a campaign</h3>
+              <p className="mt-1 text-xs text-espresso/55">
+                Sends to all {data.subscribersTotal} newsletter subscribers. Each email includes an unsubscribe link.
+              </p>
+              <label className="mt-4 block text-xs font-semibold text-espresso">
+                Subject
+                <input
+                  required
+                  maxLength={180}
+                  value={subject}
+                  onChange={(event) => setSubject(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-espresso/20 bg-white px-3 py-2 text-sm font-normal"
+                />
+              </label>
+              <label className="mt-3 block text-xs font-semibold text-espresso">
+                Message
+                <textarea
+                  required
+                  maxLength={12000}
+                  rows={6}
+                  value={body}
+                  onChange={(event) => setBody(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-espresso/20 bg-white px-3 py-2 text-sm font-normal"
+                />
+              </label>
+              {campaignError && <p role="alert" className="mt-3 text-xs text-cola-red">{campaignError}</p>}
+              {campaignMessage && <p role="status" className="mt-3 text-xs text-emerald-800">{campaignMessage}</p>}
+              <button
+                type="submit"
+                disabled={sending || data.subscribersTotal === 0}
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-cola-red px-4 py-2 text-xs font-bold uppercase tracking-wide text-cream disabled:opacity-50"
+              >
+                <Send size={13} /> {sending ? "Queueing…" : "Send campaign"}
+              </button>
+            </form>
           </section>
         </div>
       )}

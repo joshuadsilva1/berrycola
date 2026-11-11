@@ -124,6 +124,13 @@ export function subscribeNewsletter(email: string) {
   return request("/newsletter", { method: "POST", body: JSON.stringify({ email }) });
 }
 
+export function unsubscribeNewsletter(token: string) {
+  return request<{ message: string }>("/newsletter/unsubscribe", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  });
+}
+
 export interface OrderPayload {
   customer?: {
     name?: string;
@@ -136,6 +143,7 @@ export interface OrderPayload {
   };
   items: { productId: string; variantId?: string; quantity: number }[];
   promoCode?: string;
+  shippingMethod?: "standard" | "express";
   customerNote?: string;
 }
 
@@ -148,6 +156,9 @@ export interface Order {
   shippingAddress?: string | null;
   customerNote?: string | null;
   subtotal: number;
+  shippingMethod?: "standard" | "express";
+  shippingFee?: number;
+  paymentProcessingFee?: number;
   promoCode?: string | null;
   discountAmount?: number;
   discountTotal?: number;
@@ -178,6 +189,8 @@ export interface OrderEvent {
   status: string | null;
   description: string;
   location: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   source: "admin" | "courier";
   occurredAt: string;
 }
@@ -263,6 +276,19 @@ export function fetchAdminOrders(params?: { status?: string; q?: string }) {
   return authRequest<Order[]>(`/admin/orders${query ? `?${query}` : ""}`);
 }
 
+export interface AdminNotification {
+  id: string;
+  kind: "order" | "message";
+  title: string;
+  detail: string;
+  orderId: string | null;
+  createdAt: string | null;
+}
+
+export function fetchAdminNotifications() {
+  return authRequest<AdminNotification[]>("/admin/notifications");
+}
+
 export interface TrackingUpdate {
   status?: string;
   trackingId?: string;
@@ -307,6 +333,10 @@ export interface ProductInput {
   deliveryMaxDays?: number | null;
   deliveryMinDate?: string | null;
   deliveryMaxDate?: string | null;
+  packageLengthCm?: number | null;
+  packageBreadthCm?: number | null;
+  packageHeightCm?: number | null;
+  packageWeightKg?: number | null;
 }
 
 export interface ImageInput {
@@ -550,17 +580,35 @@ export interface AdminCustomer {
   lastOrderAt: string | null;
 }
 
-export function fetchCustomers() {
-  return authRequest<AdminCustomer[]>("/admin/customers");
+export interface PaginatedCustomers {
+  items: AdminCustomer[];
+  total: number;
+  page: number;
+  perPage: number;
+  totalPages: number;
+}
+
+export function fetchCustomers(page = 1, perPage = 10, search = "") {
+  const query = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+  if (search.trim()) query.set("q", search.trim());
+  return authRequest<PaginatedCustomers>(`/admin/customers?${query.toString()}`);
 }
 
 export interface AdminMessages {
   messages: { id: number; name: string; email: string; subject: string | null; message: string; createdAt: string | null }[];
   subscribers: { email: string; createdAt: string | null }[];
+  subscribersTotal: number;
 }
 
 export function fetchMessages() {
   return authRequest<AdminMessages>("/admin/messages");
+}
+
+export function sendNewsletterCampaign(payload: { subject: string; body: string }) {
+  return authRequest<{ message: string; recipients: number }>("/admin/newsletter/send", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 
@@ -605,6 +653,16 @@ export interface StorefrontStats {
 export interface StorefrontSettings {
   splashEnabled?: boolean;
   comingSoon?: boolean;
+  announcementEnabled?: boolean;
+  announcementText?: string;
+  announcementMessages?: string[];
+  reviewSectionEnabled?: boolean;
+  shippingOptions?: {
+    standard: number;
+    express: number;
+    paymentProcessingFee: number;
+    freeShippingThreshold: number;
+  };
   sliderSlides: Slide[];
   trendingMode: "auto" | "manual";
   trendingCategories: string[];
@@ -641,7 +699,9 @@ export async function updateStorefront(payload: Partial<StorefrontSettings>): Pr
     method: "PATCH",
     body: JSON.stringify(payload),
   });
-  return normalizeStorefront(s);
+  const normalized = normalizeStorefront(s);
+  window.dispatchEvent(new Event("bc-storefront-settings-updated"));
+  return normalized;
 }
 
 

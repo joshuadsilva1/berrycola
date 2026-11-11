@@ -13,7 +13,7 @@ import receiptPrintWav from "../assets/receipt-print.wav";
 import { useCart } from "../context/CartContext";
 import { useAuth, isProfileComplete } from "../context/AuthContext";
 import { variantPrice } from "../data/products";
-import { createRazorpayOrder, placeOrder, verifyRazorpayPayment, type Order } from "../lib/api";
+import { createRazorpayOrder, fetchStorefront, placeOrder, verifyRazorpayPayment, type Order } from "../lib/api";
 
 const BARCODE_PATTERN = [
   3, 1, 2, 1, 3, 2, 1, 1, 3, 1, 2, 2, 1, 3, 1, 2, 1, 1, 3, 2, 1, 2, 3, 1, 1, 2,
@@ -49,6 +49,8 @@ export default function CheckoutReceipt() {
   const [orderError, setOrderError] = useState<string | null>(null);
   const [customerNote, setCustomerNote] = useState("");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [shippingMethod, setShippingMethod] = useState<"standard" | "express">("standard");
+  const [shippingOptions, setShippingOptions] = useState({ standard: 79, express: 150, paymentProcessingFee: 0, freeShippingThreshold: 999 });
 
   const [completedOrder, setCompletedOrder] = useState<Order | null>(() => {
     try {
@@ -75,6 +77,12 @@ export default function CheckoutReceipt() {
   const printAudioRef = useRef<HTMLAudioElement | null>(null);
   const printSoundTimerRef = useRef<number | null>(null);
 
+  useEffect(() => {
+    fetchStorefront().then((settings) => {
+      if (settings.shippingOptions) setShippingOptions(settings.shippingOptions);
+    }).catch(() => {});
+  }, []);
+
   // Build current receipt items from either completed order snapshot or live cart
   const liveItems: ReceiptItemSnapshot[] = cart.lines.map((line) => ({
     key: line.key,
@@ -94,7 +102,15 @@ export default function CheckoutReceipt() {
     0
   );
   const discountAmount = completedOrder?.discountTotal ?? completedOrder?.discountAmount ?? 0;
-  const finalTotal = completedOrder?.total ?? Math.max(0, rawSubtotal - discountAmount);
+  const activeShippingMethod = completedOrder?.shippingMethod ?? shippingMethod;
+  const configuredShippingFee = activeShippingMethod === "express"
+    ? shippingOptions.express
+    : shippingOptions.freeShippingThreshold > 0 && rawSubtotal >= shippingOptions.freeShippingThreshold
+      ? 0
+      : shippingOptions.standard;
+  const shippingFee = completedOrder?.shippingFee ?? configuredShippingFee;
+  const processingFee = completedOrder?.paymentProcessingFee ?? shippingOptions.paymentProcessingFee;
+  const finalTotal = completedOrder?.total ?? Math.max(0, rawSubtotal - discountAmount) + shippingFee + processingFee;
 
   const heroImage =
     displayItems.find((item) => item.imageUrl)?.imageUrl || logo;
@@ -187,6 +203,7 @@ export default function CheckoutReceipt() {
           variantId: item.variantId ?? undefined,
           quantity: item.qty,
         })),
+        shippingMethod,
         customerNote: customerNote.trim() || undefined,
       });
 
@@ -279,12 +296,12 @@ export default function CheckoutReceipt() {
 
   const customerDisplayName =
     profile?.name || firebaseUser?.displayName || "BERRYCOLA COLLECTOR";
-  const customerAddressLine = [profile?.address, profile?.city, profile?.pincode]
+  const customerAddressLine = [profile?.address, profile?.city, profile?.state, profile?.pincode]
     .filter(Boolean)
     .join(", ");
 
   return (
-    <div className="relative min-h-screen bg-[#efeeea] text-[#141414] pt-24 pb-24 overflow-x-hidden select-none">
+    <div className="relative min-h-screen bg-[#efeeea] text-[#141414] pt-24 pb-24 overflow-x-hidden">
       {/* Condensed & Monospace Receipt Fonts */}
       <style>
         {`
@@ -372,44 +389,6 @@ export default function CheckoutReceipt() {
           </p>
         </div>
       )}
-
-      <section className="relative z-30 max-w-md mx-auto mb-8 px-4">
-        <div className="rounded-2xl bg-[#fbf5e9] border-2 border-[#1e1a18] p-5 shadow-[0_4px_0_#1e1a18]">
-          <h1 className="font-display text-xl text-espresso">Your order</h1>
-          <label htmlFor="customer-order-note" className="block mt-4 mb-1.5 text-xs font-semibold uppercase tracking-wide text-espresso/75">
-            Note for the BerryCola team <span className="normal-case font-normal">(optional)</span>
-          </label>
-          <textarea
-            id="customer-order-note"
-            value={customerNote}
-            onChange={(event) => setCustomerNote(event.target.value)}
-            maxLength={2000}
-            rows={3}
-            disabled={Boolean(completedOrder)}
-            placeholder="Gift message, customization request, delivery instructions…"
-            className="w-full resize-y rounded-xl border-2 border-[#1e1a18]/25 bg-white px-3 py-2.5 text-sm text-espresso outline-none focus:border-cola-red disabled:opacity-60"
-          />
-          {completedOrder ? (
-            <div className="mt-4 rounded-xl bg-amber-50 border border-amber-300 p-3 text-sm text-amber-950">
-              Payment received for order #{completedOrder.id.slice(0, 8).toUpperCase()}. Your order is confirmed.
-            </div>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={handleProceedToPayment}
-                disabled={!liveItems.length || isPlacingOrder}
-                className="mt-4 w-full rounded-full bg-cola-red px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isPlacingOrder ? "Preparing order…" : "Continue to payment"}
-              </button>
-              <p className="mt-2 text-center text-[11px] text-espresso/60">
-                Your order is checked against live prices and stock before payment.
-              </p>
-            </>
-          )}
-        </div>
-      </section>
 
       {/* =====================================================================
           1. KIOSK FLUORESCENT LIGHTBOX SIGN & CHROME DISPENSER SLOT
@@ -552,14 +531,14 @@ export default function CheckoutReceipt() {
 
                 {/* Order & Customer Metadata */}
                 <div className="px-5 w-full font-receipt-mono text-[10.5px] leading-[1.45] text-[#181818]">
-                  <p className="text-center uppercase font-bold ">
+                  <p className="text-center uppercase font-bold break-words whitespace-normal">
                     {customerDisplayName} · [ORDER #{receiptOrderId}]
                   </p>
                   <p className="text-center uppercase text-[10px] text-[#333]">
                     {formattedDateDots} {formattedTime} (IST)
                   </p>
                   {customerAddressLine && (
-                    <p className="text-center uppercase text-[9.5px] text-[#444] mt-0.5 truncate">
+                    <p className="text-center uppercase text-[9.5px] text-[#444] mt-0.5 break-words whitespace-normal leading-relaxed">
                       SHIP TO: {customerAddressLine}
                     </p>
                   )}
@@ -583,7 +562,7 @@ export default function CheckoutReceipt() {
                           key={item.key}
                           className="flex items-baseline justify-between gap-2 text-[10.5px]"
                         >
-                          <span className="uppercase font-bold truncate max-w-[155px]">
+                          <span className="min-w-0 uppercase font-bold break-words whitespace-normal">
                             {item.name}
                             {item.variantLabel ? ` (${item.variantLabel})` : ""}
                           </span>
@@ -604,6 +583,10 @@ export default function CheckoutReceipt() {
 
                   {/* Totals Block */}
                   <div className="space-y-1 text-[10.5px]">
+                    <div className="flex justify-between"><span>ITEMS</span><span>₹{rawSubtotal.toLocaleString("en-IN")}</span></div>
+                    {discountAmount > 0 && <div className="flex justify-between"><span>DISCOUNT</span><span>-₹{discountAmount.toLocaleString("en-IN")}</span></div>}
+                    <div className="flex justify-between"><span>{activeShippingMethod === "express" ? "EXPRESS SHIPPING" : "STANDARD SHIPPING"}</span><span>{shippingFee === 0 ? "FREE" : `₹${shippingFee.toLocaleString("en-IN")}`}</span></div>
+                    {processingFee > 0 && <div className="flex justify-between"><span>PAYMENT FEE</span><span>₹{processingFee.toLocaleString("en-IN")}</span></div>}
                     <div className="flex justify-between items-baseline font-bold text-[12px]">
                       <span>TOTAL</span>
                       <span>₹{finalTotal.toLocaleString("en-IN")}</span>
@@ -670,6 +653,71 @@ export default function CheckoutReceipt() {
           </div>
         </div>
       </div>
+
+      <section className="relative z-30 w-full max-w-[380px] mx-auto mt-7 mb-8 px-4" aria-labelledby="checkout-payment-title">
+        <div className="rounded-[3px] border-2 border-[#1e1a18] bg-[#faf9f5] p-5 sm:p-6 shadow-[0_8px_20px_rgba(0,0,0,0.15)] text-[#141414]">
+          <div className="border-b border-dashed border-black/25 pb-3">
+            <p className="font-receipt-mono text-[10px] uppercase tracking-[0.2em] text-black/55">BerryCola · Checkout</p>
+            <h1 id="checkout-payment-title" className="font-receipt-condensed text-2xl uppercase tracking-wide mt-1">Delivery &amp; payment</h1>
+          </div>
+          <label htmlFor="customer-order-note" className="block mt-4 mb-1.5 font-receipt-mono text-[10px] font-bold uppercase tracking-wide text-black/70">
+            Note for the BerryCola team <span className="normal-case font-normal">(optional)</span>
+          </label>
+          <textarea
+            id="customer-order-note"
+            value={customerNote}
+            onChange={(event) => setCustomerNote(event.target.value)}
+            maxLength={2000}
+            rows={3}
+            disabled={Boolean(completedOrder)}
+            placeholder="Gift message, customization request, delivery instructions…"
+            className="w-full resize-y rounded-sm border border-black/25 bg-white px-3 py-2.5 text-sm text-[#141414] outline-none focus:border-cola-red disabled:opacity-60"
+          />
+          {!completedOrder && (
+            <fieldset className="mt-4">
+              <legend className="mb-2 font-receipt-mono text-[10px] font-bold uppercase tracking-wide text-black/70">Choose shipping</legend>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  ["standard", "Standard", shippingOptions.freeShippingThreshold > 0 && rawSubtotal >= shippingOptions.freeShippingThreshold ? 0 : shippingOptions.standard],
+                  ["express", "Express", shippingOptions.express],
+                ] as const).map(([method, label, price]) => (
+                  <label key={method} className={`cursor-pointer border p-3 transition-colors ${shippingMethod === method ? "border-cola-red bg-cola-red/5" : "border-black/20 bg-white"}`}>
+                    <input type="radio" name="shipping-method" value={method} checked={shippingMethod === method} onChange={() => setShippingMethod(method)} className="sr-only" />
+                    <span className="block text-sm font-bold text-[#141414]">{label}</span>
+                    <span className="mt-0.5 block text-xs text-black/60">{price === 0 ? "Free" : `₹${price}`} · {method === "standard" ? "Regular delivery" : "Faster delivery"}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="mt-4 space-y-1 font-receipt-mono text-xs text-black/75">
+                <div className="flex justify-between gap-4"><span>Items</span><span>₹{rawSubtotal.toLocaleString("en-IN")}</span></div>
+                {discountAmount > 0 && <div className="flex justify-between gap-4 text-emerald-800"><span>Discount</span><span>−₹{discountAmount.toLocaleString("en-IN")}</span></div>}
+                <div className="flex justify-between gap-4"><span>{shippingMethod === "express" ? "Express shipping" : "Standard shipping"}</span><span>{configuredShippingFee === 0 ? "Free" : `₹${configuredShippingFee.toLocaleString("en-IN")}`}</span></div>
+                {processingFee > 0 && <div className="flex justify-between gap-4"><span>Payment processing fee</span><span>₹{processingFee.toLocaleString("en-IN")}</span></div>}
+                <div className="flex justify-between gap-4 border-t border-dashed border-black/25 pt-2 text-sm font-bold text-[#141414]"><span>Total</span><span>₹{finalTotal.toLocaleString("en-IN")}</span></div>
+              </div>
+            </fieldset>
+          )}
+          {completedOrder ? (
+            <div className="mt-4 border border-emerald-700/30 bg-emerald-50 p-3 text-sm text-emerald-950">
+              Payment received for order #{completedOrder.id.slice(0, 8).toUpperCase()}. Your order is confirmed.
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleProceedToPayment}
+                disabled={!liveItems.length || isPlacingOrder}
+                className="mt-5 w-full border-2 border-[#1e1a18] bg-cola-red px-5 py-3 font-receipt-mono text-xs font-bold uppercase tracking-[0.12em] text-[#fbf5e9] shadow-[0_3px_0_#1e1a18] transition-colors hover:bg-[#b81d1d] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isPlacingOrder ? "Preparing order…" : "Continue to payment"}
+              </button>
+              <p className="mt-3 text-center font-receipt-mono text-[10px] text-black/55">
+                Your order is checked against live prices and stock before payment.
+              </p>
+            </>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

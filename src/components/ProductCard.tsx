@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Check, Plus, Share2 } from "lucide-react";
+import { Check, Share2 } from "lucide-react";
 import CharmIcon from "./CharmIcon";
 import type { Product } from "../data/products";
 import { useCart } from "../context/CartContext";
@@ -16,6 +16,8 @@ export default function ProductCard({ product, index = 0 }: { product: Product; 
   const { addItem } = useCart();
   const [copied, setCopied] = useState(false);
   const [isNonSquare, setIsNonSquare] = useState(false);
+  const quickAddVariant = product.variants?.find((variant) => variant.inStock) ?? null;
+  const canQuickAdd = product.inStock !== false && !(product.stockQuantity != null && product.stockQuantity <= 0) && (!product.variants?.length || Boolean(quickAddVariant));
 
   const handleShare = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -71,53 +73,47 @@ export default function ProductCard({ product, index = 0 }: { product: Product; 
               }}
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 260, damping: 20 }}
-              className={`w-full h-full ${isNonSquare ? "object-contain" : "object-cover"}`}
+              className={`h-[88%] w-[88%] object-contain sm:h-full sm:w-full ${isNonSquare ? "" : "sm:object-cover"}`}
             />
           ) : (
             <motion.div
               whileHover={{ scale: 1.08, rotate: -4 }}
               transition={{ type: "spring", stiffness: 260, damping: 15 }}
+              className="scale-[0.72] sm:scale-100"
             >
               <CharmIcon icon={product.icon} gradient={product.gradient} size={112} />
             </motion.div>
           )}
 
-          {product.inStock === false || (product.stockQuantity != null && product.stockQuantity <= 0) ? (
+          {!canQuickAdd && (
             <span className="absolute top-3.5 left-3.5 text-[10px] font-semibold uppercase tracking-wide bg-espresso text-cream px-2.5 py-1 rounded-full border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] z-10">
               Sold out
             </span>
-          ) : (
-            <motion.button
-              onClick={(e) => {
-                // Products with options need a choice first, so let the click
-                // fall through to the product page link.
-                if (product.variants?.length) return;
-                e.preventDefault();
-                addItem(product);
-              }}
-              initial={{ opacity: 0, y: 8 }}
-              whileHover={{ scale: 1.06 }}
-              className="absolute bottom-3.5 right-3.5 w-10 h-10 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 flex items-center justify-center text-espresso hover:text-cola-red opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-2 transition-all duration-300"
-              aria-label={product.variants?.length ? `Choose options for ${product.name}` : `Add ${product.name} to cart`}
-            >
-              <Plus size={18} />
-            </motion.button>
           )}
         </div>
 
         <div className="mt-4 flex items-start justify-between gap-2 px-0.5">
           <div>
-            <h3 className="font-display text-[16px] text-espresso leading-snug">{product.name}</h3>
-            <p className="text-xs text-espresso/55 mt-0.5">{product.category}</p>
+            <h3 className="font-display text-[13px] sm:text-[16px] text-espresso leading-snug">{product.name}</h3>
+            <p className="text-[10px] sm:text-xs text-espresso/55 mt-0.5">{product.category}</p>
           </div>
           <div className="text-right shrink-0">
-            <span className="font-semibold text-espresso text-[15px]">₹{product.price}</span>
+            <span className="font-semibold text-espresso text-[13px] sm:text-[15px]">₹{product.price}</span>
             {product.compareAt && (
-              <span className="block text-xs text-espresso/40 line-through">₹{product.compareAt}</span>
+              <span className="block text-[10px] sm:text-xs text-espresso/40 line-through">₹{product.compareAt}</span>
             )}
           </div>
         </div>
       </Link>
+      <button
+        type="button"
+        disabled={!canQuickAdd}
+        onClick={() => canQuickAdd && addItem(product, quickAddVariant)}
+        className="mt-3 w-full rounded-full border-2 border-[#1e1a18] bg-cola-red px-2 sm:px-3 py-2 sm:py-2.5 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-[#fbf5e9] shadow-[0_3px_0_#1e1a18] transition-all hover:bg-[#fbf5e9] hover:text-cola-red active:translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+        aria-label={`Quick add ${product.name} to cart`}
+      >
+        {canQuickAdd ? quickAddVariant ? `Add ${quickAddVariant.label}` : "Add to bag" : "Sold out"}
+      </button>
     </motion.div>
   );
 }

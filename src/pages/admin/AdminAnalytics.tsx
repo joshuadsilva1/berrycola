@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Check, Laptop, RefreshCw, Smartphone, Tablet, UserCheck } from "lucide-react";
 import AdminNav from "../../components/AdminNav";
+import Pagination from "../../components/Pagination";
 import {
   BarList,
   Card,
@@ -374,8 +375,8 @@ export default function AdminAnalytics() {
                   {report.customers.top.map((c) => (
                     <li key={(c.email ?? "") + c.name} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                       <span className="min-w-0">
-                        <span className="block text-espresso truncate">{c.name}</span>
-                        <span className="block text-xs text-espresso/45 truncate">{c.email}</span>
+                        <span className="block break-words whitespace-normal text-espresso">{c.name}</span>
+                        <span className="block break-all whitespace-normal text-xs text-espresso/45">{c.email}</span>
                       </span>
                       <span className="text-right shrink-0 tabular-nums">
                         <span className="block font-semibold text-espresso">{inr(c.spend)}</span>
@@ -434,11 +435,17 @@ const PRODUCT_COLUMNS: { key: keyof ProductRow; label: string; format: (r: Produ
 
 function ProductTable({ rows }: { rows: ProductRow[] }) {
   const [sortKey, setSortKey] = useState<keyof ProductRow>("revenue");
+  const [page, setPage] = useState(1);
+  const perPage = 10;
   if (!rows.length) return <Empty />;
   const sorted = [...rows].sort((a, b) => Number(b[sortKey] ?? -1) - Number(a[sortKey] ?? -1));
+  const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
+  const currentPage = Math.min(page, totalPages);
+  const visibleRows = sorted.slice((currentPage - 1) * perPage, currentPage * perPage);
   return (
-    <div className="overflow-x-auto -mx-2">
-      <table className="w-full text-sm min-w-[640px]">
+    <div className="-mx-2">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[640px]">
         <thead>
           <tr className="text-left text-[11px] uppercase tracking-wide text-espresso/50">
             <th className="font-semibold px-2 pb-2">Product</th>
@@ -455,15 +462,15 @@ function ProductTable({ rows }: { rows: ProductRow[] }) {
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-espresso/8">
-          {sorted.map((r) => (
+          <tbody className="divide-y divide-espresso/8">
+          {visibleRows.map((r) => (
             <tr key={r.id} className="hover:bg-espresso/3">
               <td className="px-2 py-2">
                 <Link to={`/product/${r.id}`} className="flex items-center gap-2.5 hover:text-cola-red">
                   <span className="w-8 h-8 rounded-lg overflow-hidden bg-espresso/5 shrink-0">
                     {r.imageUrl && <img src={r.imageUrl} alt="" className="w-full h-full object-cover" />}
                   </span>
-                  <span className="truncate">{r.name}</span>
+                  <span className="min-w-0 break-words whitespace-normal">{r.name}</span>
                 </Link>
               </td>
               {PRODUCT_COLUMNS.map((c) => (
@@ -477,7 +484,9 @@ function ProductTable({ rows }: { rows: ProductRow[] }) {
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
+      </div>
+      <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={sorted.length} perPage={perPage} onPageChange={setPage} itemLabel="products" />
     </div>
   );
 }
@@ -506,13 +515,19 @@ function DeviceIcon({ device }: { device: string | null | undefined }) {
 }
 
 function UserLoginsTable({ rows }: { rows: AnalyticsLoginEntry[] }) {
+  const [page, setPage] = useState(1);
+  const perPage = 10;
   if (!rows.length) {
     return <Empty>No user logins recorded in this date range yet.</Empty>;
   }
+  const totalPages = Math.max(1, Math.ceil(rows.length / perPage));
+  const currentPage = Math.min(page, totalPages);
+  const visibleRows = rows.slice((currentPage - 1) * perPage, currentPage * perPage);
 
   return (
-    <div className="overflow-x-auto -mx-2">
-      <table className="w-full text-sm min-w-[680px]">
+    <div className="-mx-2">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[680px]">
         <thead>
           <tr className="text-left text-[11px] uppercase tracking-wide text-espresso/50 border-b border-espresso/10">
             <th className="font-semibold px-2 pb-2.5">User</th>
@@ -522,7 +537,7 @@ function UserLoginsTable({ rows }: { rows: AnalyticsLoginEntry[] }) {
           </tr>
         </thead>
         <tbody className="divide-y divide-espresso/8">
-          {rows.map((r) => {
+          {visibleRows.map((r) => {
             const displayName = r.userName || r.userEmail || r.userPhone || "Authenticated User";
             const contactLine = [r.userEmail, r.userPhone].filter(Boolean).join(" · ");
             const deviceParts = [
@@ -541,7 +556,7 @@ function UserLoginsTable({ rows }: { rows: AnalyticsLoginEntry[] }) {
                     </span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-espresso truncate">{displayName}</span>
+                        <span className="font-semibold text-espresso break-words whitespace-normal">{displayName}</span>
                         {r.isAdmin && (
                           <span className="text-[10px] uppercase  font-semibold px-1.5 py-0.5 rounded bg-espresso text-cream">
                             Admin
@@ -549,7 +564,7 @@ function UserLoginsTable({ rows }: { rows: AnalyticsLoginEntry[] }) {
                         )}
                       </div>
                       {contactLine && (
-                        <span className="block text-xs text-espresso/55 truncate">{contactLine}</span>
+                        <span className="block break-all whitespace-normal text-xs text-espresso/55">{contactLine}</span>
                       )}
                     </div>
                   </div>
@@ -584,7 +599,9 @@ function UserLoginsTable({ rows }: { rows: AnalyticsLoginEntry[] }) {
             );
           })}
         </tbody>
-      </table>
+        </table>
+      </div>
+      <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={rows.length} perPage={perPage} onPageChange={setPage} itemLabel="logins" />
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, ShoppingBag, Search, User, LayoutDashboard } from "lucide-react";
+import { Menu, X, Search, User, LayoutDashboard } from "lucide-react";
 import logo from "../assets/berrycola-logo.jpg";
+import shoppingCart from "../assets/shopping-cart.png";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useOrderUpdates } from "../context/OrderUpdatesContext";
@@ -14,7 +15,7 @@ const NAV_LINKS = [
   { label: "Contact", href: "/contact" },
 ];
 
-export default function Navbar() {
+export default function Navbar({ announcementVisible = false }: { announcementVisible?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { count, openCart } = useCart();
@@ -37,7 +38,7 @@ export default function Navbar() {
         initial={{ y: -80 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className={`fixed top-0 inset-x-0 z-50 transition-colors duration-300 ${
+        className={`fixed inset-x-0 z-50 transition-[top,background-color] duration-300 ${announcementVisible ? "top-8" : "top-0"} ${
           scrolled ? "bg-cream/90 backdrop-blur-md shadow-[0_1px_0_rgba(60,38,32,0.08)]" : "bg-transparent"
         }`}
       >
@@ -46,7 +47,7 @@ export default function Navbar() {
             <img
               src={logo}
               alt="BerryCola"
-              className="w-10 h-10 rounded-full shadow-md transition-transform duration-300 group-hover:rotate-12"
+              className="w-20 h-20 rounded-full shadow-md transition-transform duration-300 group-hover:rotate-12"
             />
             <span className="font-display text-lg via-black hidden sm:block">
               Berrycola
@@ -63,19 +64,25 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
+            {firebaseUser && (
+              <Link to="/orders" className="relative text-[13px] font-medium uppercase tracking-[0.12em] text-espresso/80 hover:text-cola-red transition-colors">
+                Orders
+                {updates.length > 0 && <span className="absolute -top-1.5 -right-3 h-2 w-2 rounded-full bg-[#fbf5e9]" />}
+              </Link>
+            )}
           </nav>
 
           <div className="flex items-center gap-3">
             <button
               aria-label="Search"
-              className="hidden sm:flex w-9 h-9 items-center justify-center rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-espresso hover:text-cola-red transition-all"
+              className="hidden sm:flex w-9 h-9 items-center justify-center rounded-full bg-cola-red border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-[#fbf5e9] hover:text-black transition-all"
             >
               <Search size={17} />
             </button>
             <Link
               to={firebaseUser ? "/account" : "/login"}
               aria-label={firebaseUser ? "Account" : "Login"}
-              className="relative hidden sm:flex w-9 h-9 items-center justify-center rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-espresso hover:text-cola-red transition-all"
+              className="relative hidden sm:flex w-9 h-9 items-center justify-center rounded-full bg-cola-red border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-[#fbf5e9] hover:text-black transition-all"
             >
               <User size={17} />
               {updates.length > 0 && (
@@ -87,7 +94,7 @@ export default function Navbar() {
                 to="/admin/analytics"
                 aria-label="Admin dashboard"
                 title="Admin dashboard"
-                className="flex w-9 h-9 items-center justify-center rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-cola-red hover:bg-cola-red hover:text-[#fbf5e9] transition-all"
+                className="flex w-9 h-9 items-center justify-center rounded-full bg-cola-red border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-[#fbf5e9] hover:text-black transition-all"
               >
                 <LayoutDashboard size={17} />
               </Link>
@@ -95,9 +102,22 @@ export default function Navbar() {
             <button
               aria-label="Open cart"
               onClick={openCart}
-              className="relative flex w-9 h-9 items-center justify-center rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-espresso hover:text-cola-red transition-all"
+              className="group relative flex w-9 h-9 items-center justify-center rounded-full bg-cola-red border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-cola-red hover:text-black transition-all"
             >
-              <ShoppingBag size={17} />
+              <span
+                aria-hidden="true"
+                className="h-[18px] w-[18px] bg-[#fbf5e9] transition-colors"
+                style={{
+                  maskImage: `url(${shoppingCart})`,
+                  WebkitMaskImage: `url(${shoppingCart})`,
+                  maskRepeat: "no-repeat",
+                  WebkitMaskRepeat: "no-repeat",
+                  maskPosition: "center",
+                  WebkitMaskPosition: "center",
+                  maskSize: "contain",
+                  WebkitMaskSize: "contain",
+                }}
+              />
               <AnimatePresence>
                 {count > 0 && (
                   <motion.span
@@ -129,7 +149,7 @@ export default function Navbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.35, ease: "easeInOut" }}
-            className="fixed top-20 inset-x-0 z-40 bg-cream/98 backdrop-blur-md shadow-lg md:hidden overflow-hidden"
+            className={`fixed ${announcementVisible ? "top-28" : "top-20"} inset-x-0 z-40 bg-cream/98 backdrop-blur-md shadow-lg md:hidden overflow-hidden`}
           >
             <nav className="flex flex-col px-6 py-6 gap-1">
               {NAV_LINKS.map((link, i) => (
@@ -161,6 +181,13 @@ export default function Navbar() {
                   {firebaseUser ? "Account" : "Login"}
                 </Link>
               </motion.div>
+              {firebaseUser && (
+                <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: (NAV_LINKS.length + 0.5) * 0.05 }}>
+                  <Link to="/orders" onClick={() => setMenuOpen(false)} className="block py-3 text-lg font-display text-espresso border-b border-espresso/10">
+                    My orders {updates.length > 0 ? `(${updates.length} updates)` : ""}
+                  </Link>
+                </motion.div>
+              )}
               {profile?.isAdmin && (
                 <motion.div
                   initial={{ opacity: 0, x: -12 }}

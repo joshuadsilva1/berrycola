@@ -12,6 +12,7 @@ export default function OrderStatusTracker({ order }: { order: Order }) {
   }
 
   const activeIndex = Math.max(statusStepIndex(order.status), 0);
+  const latestCourierUpdate = order.events.find((event) => event.source === "courier");
 
   return (
     <div>
@@ -51,7 +52,7 @@ export default function OrderStatusTracker({ order }: { order: Order }) {
 
       {/* Shiprocket Tracking Section */}
       {(order.trackingId || order.carrier) && (
-        <div className="mt-6 p-4 rounded-xl border border-espresso/10 bg-white shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="mt-6 p-4 rounded-xl border border-espresso/10 bg-white shadow-sm">
           <div>
             <h4 className="text-xs font-bold uppercase text-espresso tracking-wide flex items-center gap-1.5">
               <Truck size={14} className="text-cola-red" /> 
@@ -66,16 +67,17 @@ export default function OrderStatusTracker({ order }: { order: Order }) {
               )}
             </div>
           </div>
-
-          {order.trackingId && (
-            <a
-              href={order.trackingUrl || `https://shiprocket.co/tracking/${order.trackingId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-1.5 bg-cola-red text-cream px-5 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-wider active:translate-y-0.5 transition-all shadow-[0_2px_0_#1e1a18] border-2 border-[#1e1a18] hover:bg-[#b81d1d]"
-            >
-              Track Package
-            </a>
+          {latestCourierUpdate && (
+            <div className="mt-3 rounded-lg bg-[#fbf5e9] px-3 py-2.5">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-cola-red">Latest shipment update</p>
+              <p className="mt-0.5 text-sm font-semibold text-espresso">{latestCourierUpdate.description}</p>
+              {(latestCourierUpdate.location || latestCourierUpdate.occurredAt) && (
+                <p className="mt-0.5 text-xs text-espresso/55">
+                  {latestCourierUpdate.location}{latestCourierUpdate.location && latestCourierUpdate.occurredAt ? " · " : ""}
+                  {latestCourierUpdate.occurredAt ? new Date(latestCourierUpdate.occurredAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : ""}
+                </p>
+              )}
+            </div>
           )}
         </div>
       )}

@@ -371,7 +371,7 @@ export default function CartDrawer() {
 
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-baseline gap-1">
-                            <h4 className="text-[12px] font-bold truncate uppercase tracking-tight">
+                            <h4 className="min-w-0 flex-1 text-[12px] font-bold break-words whitespace-normal uppercase tracking-tight">
                               {name}
                             </h4>
                             <span className="text-[12px] font-bold shrink-0">
@@ -542,7 +542,7 @@ export default function CartDrawer() {
                     y="28"
                     width="18"
                     height="30"
-                    fill="#b81d1d"
+                    fill="#9e0821"
                     stroke="#1e1a18"
                     strokeWidth="2.5"
                   />
@@ -551,7 +551,7 @@ export default function CartDrawer() {
                     y="28"
                     width="24"
                     height="30"
-                    fill="#b81d1d"
+                    fill="#9e0821"
                     stroke="#1e1a18"
                     strokeWidth="2.5"
                   />
@@ -622,7 +622,7 @@ export default function CartDrawer() {
                   {/* Outer lower chassis body (BerryCola Red) */}
                   <path
                     d="M 92 54 L 228 54 L 228 74 L 372 74 L 372 54 L 508 54 C 534 66, 550 88, 552 115 L 570 272 C 574 298, 558 312, 532 312 L 68 312 C 42 312, 26 298, 30 272 L 48 115 C 50 88, 66 66, 92 54 Z"
-                    fill="#d51f1f"
+                    fill="#9e0821"
                     stroke="#1e1a18"
                     strokeWidth="3"
                     strokeLinejoin="round"
@@ -631,14 +631,14 @@ export default function CartDrawer() {
                   {/* Angled side bevels of the central notch (darker crimson shade) */}
                   <polygon
                     points="228,54 172,74 228,74"
-                    fill="#a31515"
+                    fill="#9e0821"
                     stroke="#1e1a18"
                     strokeWidth="2.5"
                     strokeLinejoin="round"
                   />
                   <polygon
                     points="372,54 428,74 372,74"
-                    fill="#a31515"
+                    fill="#9e0821"
                     stroke="#1e1a18"
                     strokeWidth="2.5"
                     strokeLinejoin="round"
@@ -647,7 +647,7 @@ export default function CartDrawer() {
                   {/* Top Hood Panel (Slightly lighter warm red for two-tone illustrated depth) */}
                   <path
                     d="M 92 54 L 228 54 L 172 74 L 428 74 L 372 54 L 508 54 C 524 68, 530 88, 526 112 L 74 112 C 70 88, 76 68, 92 54 Z"
-                    fill="#e23c3c"
+                    fill="#9e0821"
                     stroke="#1e1a18"
                     strokeWidth="2.5"
                     strokeLinejoin="round"
@@ -656,7 +656,7 @@ export default function CartDrawer() {
                   {/* Front Hood Faceplate */}
                   <polygon
                     points="74,112 526,112 518,162 82,162"
-                    fill="#c81e1e"
+                    fill="#9e0821"
                     stroke="#1e1a18"
                     strokeWidth="2.5"
                     strokeLinejoin="round"
@@ -676,7 +676,7 @@ export default function CartDrawer() {
                   {/* Left & Right inner chassis framing lines */}
                   <path
                     d="M 82 162 L 50 282 C 50 290, 58 294, 72 294 L 528 294 C 542 294, 550 290, 550 282 L 518 162"
-                    fill="#b31919"
+                    fill="#9e0821"
                     stroke="#1e1a18"
                     strokeWidth="2.5"
                     strokeLinejoin="round"
@@ -714,7 +714,7 @@ export default function CartDrawer() {
                     width="328"
                     height="28"
                     rx="9"
-                    fill={rawItems.length > 0 ? "#8f1414" : "#dfd3be"}
+                    fill={rawItems.length > 0 ? "#9e0821" : "#dfd3be"}
                     stroke="#1e1a18"
                     strokeWidth="2.5"
                   />

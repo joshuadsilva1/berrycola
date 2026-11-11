@@ -36,6 +36,10 @@ interface FormState {
   deliveryMaxDays: string;
   deliveryMinDate: string;
   deliveryMaxDate: string;
+  packageLengthCm: string;
+  packageBreadthCm: string;
+  packageHeightCm: string;
+  packageWeightKg: string;
   photoMode: PhotoMode;
   photos: PhotoEntry[];
 }
@@ -85,6 +89,10 @@ function toForm(product?: Product, availableCategories: string[] = []): FormStat
     deliveryMaxDays: product?.deliveryMaxDays != null ? String(product.deliveryMaxDays) : "",
     deliveryMinDate: product?.deliveryMinDate ?? "",
     deliveryMaxDate: product?.deliveryMaxDate ?? "",
+    packageLengthCm: product?.packageLengthCm != null ? String(product.packageLengthCm) : "",
+    packageBreadthCm: product?.packageBreadthCm != null ? String(product.packageBreadthCm) : "",
+    packageHeightCm: product?.packageHeightCm != null ? String(product.packageHeightCm) : "",
+    packageWeightKg: product?.packageWeightKg != null ? String(product.packageWeightKg) : "",
     photoMode: hasOptions ? "options" : "gallery",
     photos: ((hasOptions ? product?.variants : product?.gallery) ?? []).map(toEntry),
   };
@@ -107,6 +115,10 @@ function toInput(form: FormState): ProductInput {
     deliveryMaxDays: form.deliveryMaxDays.trim() !== "" ? Math.max(0, Number(form.deliveryMaxDays)) : null,
     deliveryMinDate: form.deliveryMinDate.trim() || null,
     deliveryMaxDate: form.deliveryMaxDate.trim() || null,
+    packageLengthCm: form.packageLengthCm.trim() ? Number(form.packageLengthCm) : null,
+    packageBreadthCm: form.packageBreadthCm.trim() ? Number(form.packageBreadthCm) : null,
+    packageHeightCm: form.packageHeightCm.trim() ? Number(form.packageHeightCm) : null,
+    packageWeightKg: form.packageWeightKg.trim() ? Number(form.packageWeightKg) : null,
     // Only one list is in use at a time; clear the other.
     variants: form.photoMode === "options" ? form.photos.map((e) => toImageInput(e, true)) : [],
     gallery: form.photoMode === "gallery" ? form.photos.map((e) => toImageInput(e, false)) : [],
@@ -318,7 +330,7 @@ export default function AdminProducts() {
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <p className="font-display text-espresso truncate">{product.name}</p>
+                      <p className="font-display break-words whitespace-normal text-espresso">{product.name}</p>
                       <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs text-espresso/55">
                         <span>{product.category}</span>
                         {product.stockQuantity != null && (
@@ -562,6 +574,36 @@ function ProductForm({
               />
               In stock (Available for purchase)
             </label>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3 border-t border-espresso/10 pt-5">
+          <div>
+            <p className="font-display text-lg text-espresso">Packed unit measurements</p>
+            <p className="text-xs text-espresso/55">
+              Enter the packed size and weight for one sellable unit. Shiprocket shipment dimensions are estimated from all units in the order.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {([
+              ["packageLengthCm", "Length (cm)"],
+              ["packageBreadthCm", "Breadth (cm)"],
+              ["packageHeightCm", "Height (cm)"],
+              ["packageWeightKg", "Weight (kg)"],
+            ] as const).map(([key, label]) => (
+              <label key={key} className={labelClass}>
+                {label}
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={form[key]}
+                  onChange={(event) => set(key, event.target.value)}
+                  className={inputClass}
+                  placeholder="Required for shipping"
+                />
+              </label>
+            ))}
           </div>
         </div>
 

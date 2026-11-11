@@ -66,3 +66,29 @@ body {
 .text-balance {
   text-wrap: balance;
 }
+
+@media (max-width: 767px) {
+  .home-hero-charm {
+    width: min(36vw, 140px) !important;
+    height: min(36vw, 140px) !important;
+  }
+}
+
+.announcement-track {
+  animation: announcement-scroll 11s linear infinite;
+}
+
+.announcement-banner:hover .announcement-track {
+  animation-play-state: paused;
+}
+
+@keyframes announcement-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .announcement-track {
+    animation: none;
+  }
+}

@@ -6,14 +6,16 @@ interface PaperCharmProps {
   image?: string;
   size: number;
   tilt?: number;
+  className?: string;
 }
 
-export default function PaperCharm({ icon, gradient, image, size, tilt = 0 }: PaperCharmProps) {
+export default function PaperCharm({ icon, gradient, image, size, tilt = 0, className }: PaperCharmProps) {
   if (image) {
     return (
       <img
         src={image}
         alt=""
+        className={className}
         style={{
           width: size,
           height: size,

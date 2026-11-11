@@ -13,16 +13,17 @@ import NewsletterForm from "../components/NewsletterForm";
 import { useProducts } from "../hooks/useCatalog";
 import { fetchStorefront, type StorefrontSettings } from "../lib/api";
 
-import skullDiceCharm from "../assets/charm-skull-dice.png";
-import fairyCharm from "../assets/fairy.png";
-import batmanCharm from "../assets/batman.png";
-import marlboroCharm from "../assets/marlboro.png";
+import skullDiceCharm from "../assets/charizard charm new.png";
+import gachaPouch from "../assets/gacha pouch.png";
+import batmanFairyCharm from "../assets/batman and batfairy.png";
+import lipbalmCharm from "../assets/lip bam charm.png";
+import batmanCharm from "../assets/fairy.png";
 
 const heroCharms = [
-  { image: fairyCharm, style: "top-[8%] left-[6%]", size: 250, float: 4.5, tilt: -7 },
-  { image: batmanCharm, style: "top-[62%] left-[3%]", size: 250, float: 5.5, tilt: 5 },
-  { image: marlboroCharm, style: "top-[14%] right-[7%]", size: 270, float: 6, tilt: 6 },
-  { image: skullDiceCharm, style: "top-[64%] right-[9%]", size: 290, float: 5, tilt: -4 },
+  { image: gachaPouch, style: "top-[7%] left-[-3%] md:top-[8%] md:left-[6%]", size: 430, float: 4.5, tilt: -7 },
+  { image: batmanFairyCharm, style: "bottom-[10%] left-[-5%] md:bottom-auto md:top-[62%] md:left-[3%]", size: 450, float: 5.5, tilt: 5 },
+  { image: lipbalmCharm, style: "top-[7%] right-[-3%] md:top-[14%] md:right-[7%]", size: 400, float: 6, tilt: 6 },
+  { image: batmanCharm, style: "bottom-[10%] right-[-5%] md:bottom-auto md:top-[64%] md:right-[9%]", size: 310, float: 5, tilt: -4 },
 ];
 
 const categoryCopy: Record<string, string> = {
@@ -58,29 +59,30 @@ export default function Home() {
   return (
     <div>
       {/* HERO */}
-      <section className="relative min-h-screen flex items-center overflow-hidden pt-20">
+      <section className="relative min-h-[100svh] flex items-center overflow-hidden pt-20 md:min-h-screen">
         <div className="absolute inset-0 -z-10" style={{ background: "radial-gradient(circle at 50% 20%, #fbe9e4 0%, #fffffe 55%)" }} />
         {heroCharms.map((c, i) => (
-          <motion.div key={i} className={`hidden md:block absolute ${c.style}`} animate={{ y: [0, -18, 0], rotate: [0, 6, 0] }} transition={{ duration: c.float, repeat: Infinity, ease: "easeInOut", delay: i * 0.3 }}>
-            <PaperCharm image={c.image} size={c.size} tilt={c.tilt} />
+          <motion.div key={i} className={`absolute ${c.style}`} animate={{ y: [0, -18, 0], rotate: [0, 6, 0] }} transition={{ duration: c.float, repeat: Infinity, ease: "easeInOut", delay: i * 0.3 }}>
+            <PaperCharm image={c.image} size={c.size} tilt={c.tilt} className="home-hero-charm" />
           </motion.div>
         ))}
 
-        <div className="relative mx-auto max-w-4xl px-6 text-center">
-          <motion.span initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6 }} className="inline-block px-4 py-1.5 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] text-xs uppercase tracking-[0.22em] text-cola-red font-semibold mb-6">
+        <div className="relative z-10 mx-auto w-full max-w-4xl px-5 pt-20 text-center sm:px-6 sm:pt-16 md:pt-0">
+          <motion.span initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6 }} className="mb-5 inline-block rounded-full border-2 border-[#1e1a18] bg-[#fbf5e9] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-cola-red shadow-[0_2px_0_#1e1a18] sm:mb-6 sm:px-4 sm:text-xs sm:tracking-[0.22em]">
             New Drop · Bag Charms Collection
           </motion.span>
-          <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="font-display text-5xl sm:text-6xl md:text-7xl text-espresso">
-            Small charms.<br /><span className="text-cola-red">Big statements.</span>
+          <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="font-display text-[clamp(2.35rem,9vw,3.75rem)] leading-[1.05] text-espresso sm:text-6xl md:text-7xl">
+            <span className="block whitespace-nowrap">Small charms.</span>
+            <span className="block whitespace-nowrap text-cola-red">Big statements.</span>
           </motion.h1>
-          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.7 }} className="mt-6 text-espresso/65 text-lg max-w-xl mx-auto text-balance">
+          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.7 }} className="mx-auto mt-4 max-w-[34ch] text-base font-normal leading-relaxed text-espresso/65 text-balance sm:mt-6 sm:max-w-xl sm:text-lg">
             Hand-finished charms designed to be clipped, swapped, and carried on everything, bags, belt loops, phones, keys. Build a lineup that's entirely, unmistakably yours.
           </motion.p>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.7 }} className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <Link to="/shop" className="group inline-flex items-center gap-2 bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_4px_0_#1e1a18] active:translate-y-0.5 px-8 py-3.5 rounded-full font-semibold tracking-wide hover:bg-[#b81d1d] transition-all">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.7 }} className="mx-auto mt-6 grid max-w-[340px] grid-cols-2 items-center justify-center gap-3 sm:mt-10 sm:flex sm:max-w-none sm:flex-wrap sm:gap-4">
+            <Link to="/shop" className="group inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-[#1e1a18] bg-cola-red px-3 py-3 text-xs font-semibold tracking-wide text-[#fbf5e9] shadow-[0_4px_0_#1e1a18] transition-all hover:bg-[#b81d1d] active:translate-y-0.5 sm:gap-2 sm:px-8 sm:py-3.5 sm:text-base">
               Shop the Drop <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
             </Link>
-            <Link to="/about" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-semibold tracking-wide text-espresso bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_4px_0_#1e1a18] active:translate-y-0.5 hover:text-cola-red transition-all">
+            <Link to="/about" className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-[#1e1a18] bg-[#fbf5e9] px-3 py-3 text-xs font-semibold tracking-wide text-espresso shadow-[0_4px_0_#1e1a18] transition-all hover:text-cola-red active:translate-y-0.5 sm:gap-2 sm:px-8 sm:py-3.5 sm:text-base">
               Our Story
             </Link>
           </motion.div>
@@ -173,7 +175,7 @@ export default function Home() {
       )}
 
       {/* VERIFIED BUYER REVIEWS SHOWCASE */}
-      <ReviewsSection />
+      {storefront?.reviewSectionEnabled !== false && <ReviewsSection />}
 
       {/* BRAND STORY / STATS */}
       <section className="relative bg-espresso border-y-2 border-[#1e1a18] py-28 overflow-hidden">
@@ -189,7 +191,7 @@ export default function Home() {
             </Link>
           </Reveal>
           <Reveal delay={0.15}>
-            <div className="grid grid-cols-2 gap-8 bg-cream/5 rounded-3xl p-10 border-2 border-cream/20 shadow-[0_6px_0_rgba(0,0,0,0.35)]">
+            <div className={`grid ${storefront?.reviewSectionEnabled === false ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2"} gap-8 bg-cream/5 rounded-3xl p-10 border-2 border-cream/20 shadow-[0_6px_0_rgba(0,0,0,0.35)]`}>
               <StatCounter
                 value={storefront?.stats?.charmDesigns ?? (products ?? []).length}
                 label="Charm Designs"
@@ -202,7 +204,7 @@ export default function Home() {
                 value={storefront?.stats?.charmsShipped ?? 0}
                 label="Charms Ordered"
               />
-              {storefront?.stats?.averageRating != null ? (
+              {storefront?.reviewSectionEnabled !== false && (storefront?.stats?.averageRating != null ? (
                 <StatCounter
                   value={storefront.stats.averageRating}
                   suffix="/5"
@@ -214,7 +216,7 @@ export default function Home() {
                   value={storefront?.stats?.totalReviews ?? 0}
                   label="Verified Reviews"
                 />
-              )}
+              ))}
             </div>
           </Reveal>
         </div>

@@ -35,7 +35,17 @@ export default function AdminStorefront() {
           categoryImages: configData.categoryImages || {},
           customCategories: configData.customCategories || [],
           productPageDetails: configData.productPageDetails || {},
+          announcementEnabled: configData.announcementEnabled ?? true,
+          announcementText: configData.announcementText ?? "New drop every Friday",
+          announcementMessages: configData.announcementMessages ?? [configData.announcementText ?? "New drop every Friday"],
+          reviewSectionEnabled: configData.reviewSectionEnabled ?? true,
           comingSoon: configData.comingSoon || false,
+          shippingOptions: configData.shippingOptions || {
+            standard: 79,
+            express: 150,
+            paymentProcessingFee: 0,
+            freeShippingThreshold: 999,
+          },
         });
       } catch (error) {
         console.error("Failed to load storefront data:", error);
@@ -85,6 +95,32 @@ export default function AdminStorefront() {
     });
   };
 
+  const updateAnnouncementMessage = (index: number, value: string) => {
+    const messages = [...(settings.announcementMessages ?? [])];
+    messages[index] = value;
+    setSettings({
+      ...settings,
+      announcementMessages: messages,
+      announcementText: messages[0] ?? "",
+    });
+  };
+
+  const addAnnouncementMessage = () => {
+    const messages = [...(settings.announcementMessages ?? [])];
+    if (messages.length >= 10) return;
+    messages.push("");
+    setSettings({ ...settings, announcementMessages: messages });
+  };
+
+  const removeAnnouncementMessage = (index: number) => {
+    const messages = (settings.announcementMessages ?? []).filter((_, i) => i !== index);
+    setSettings({
+      ...settings,
+      announcementMessages: messages,
+      announcementText: messages[0] ?? "",
+    });
+  };
+
   const handleImageUpload = async (file: File, callback: (url: string) => void) => {
     setUploadingUrl(true);
     setUploadError(null);
@@ -113,7 +149,7 @@ export default function AdminStorefront() {
           <button
             onClick={handleSave}
             disabled={saving || uploadingUrl}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-[#b81d1d] text-xs font-semibold uppercase  transition-all cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-cola-red text-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 hover:bg-black hover:text-white text-xs font-semibold uppercase transition-all cursor-pointer disabled:opacity-50"
           >
             {savedToast ? <Check size={16} /> : <Save size={16} />}
             {saving ? "Saving..." : savedToast ? "Saved!" : "Save Changes"}
@@ -131,6 +167,44 @@ export default function AdminStorefront() {
             <Check size={14} className="text-emerald-700" /> Storefront configuration saved successfully!
           </p>
         )}
+
+        <section className="bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_5px_0_#1e1a18] rounded-3xl p-6 sm:p-8">
+          <h2 className="font-display text-2xl text-espresso">Checkout fees &amp; shipping</h2>
+          <p className="mt-1 text-xs text-espresso/65">These prices appear at checkout. Standard shipping is free at the threshold below.</p>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            {([
+              ["standard", "Standard shipping (₹)"],
+              ["express", "Express shipping (₹)"],
+              ["paymentProcessingFee", "Payment processing fee (₹)"],
+              ["freeShippingThreshold", "Free standard shipping from (₹)"],
+            ] as const).map(([key, label]) => (
+              <label key={key} className="text-xs font-bold uppercase tracking-wide text-espresso/75">
+                {label}
+                <input
+                  type="number"
+                  min={0}
+                  max={100000}
+                  step={1}
+                  value={settings.shippingOptions?.[key] ?? 0}
+                  onChange={(event) => setSettings({
+                    ...settings,
+                    shippingOptions: {
+                      standard: settings.shippingOptions?.standard ?? 79,
+                      express: settings.shippingOptions?.express ?? 150,
+                      paymentProcessingFee: settings.shippingOptions?.paymentProcessingFee ?? 0,
+                      freeShippingThreshold: settings.shippingOptions?.freeShippingThreshold ?? 999,
+                      [key]: Math.max(0, Number(event.target.value) || 0),
+                    },
+                  })}
+                  className={`${inputClass} mt-1`}
+                />
+              </label>
+            ))}
+          </div>
+          <p className="mt-4 text-[11px] text-amber-900">
+            Payment processing fees may be restricted for some payment methods. Confirm your Razorpay terms and applicable rules before setting a non-zero amount.
+          </p>
+        </section>
 
         {/* 1. Coming Soon Mode Section */}
         <section className="bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_5px_0_#1e1a18] rounded-3xl p-6 sm:p-8">
@@ -153,14 +227,90 @@ export default function AdminStorefront() {
               </p>
             </div>
 
-            <label className="relative inline-flex items-center cursor-pointer select-none">
+            <label className="group relative inline-flex items-center cursor-pointer select-none">
               <input
                 type="checkbox"
                 className="sr-only peer"
                 checked={settings.comingSoon ?? false}
                 onChange={(e) => setSettings({ ...settings, comingSoon: e.target.checked })}
               />
-              <div className="w-14 h-8 bg-white peer-focus:outline-none rounded-full border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] peer peer-checked:after:translate-x-full peer-checked:after:border-[#1e1a18] after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-[#fbf5e9] after:border-2 after:border-[#1e1a18] after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-cola-red"></div>
+              <div className="w-14 h-8 bg-white peer-focus:outline-none rounded-full border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] peer peer-checked:after:translate-x-full peer-checked:after:border-[#1e1a18] after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-[#fbf5e9] after:border-2 after:border-[#1e1a18] after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-cola-red group-hover:bg-black"></div>
+            </label>
+          </div>
+        </section>
+
+        <section className="bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_5px_0_#1e1a18] rounded-3xl p-6 sm:p-8">
+          <h2 className="font-display text-2xl text-espresso">Announcement &amp; reviews</h2>
+          <p className="mt-1 text-xs text-espresso/65">Set the scrolling message above the navigation and choose whether customer reviews appear on the storefront.</p>
+
+          <div className="mt-5 rounded-2xl border-2 border-[#1e1a18] bg-white p-4 sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-bold text-espresso">Announcement banner</h3>
+                <p className="mt-1 text-xs text-espresso/60">The cherry red strip at the top of every storefront page.</p>
+              </div>
+              <label className="group relative inline-flex items-center cursor-pointer select-none">
+                <span className="sr-only">Show announcement banner</span>
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={settings.announcementEnabled ?? true}
+                  onChange={(e) => setSettings({ ...settings, announcementEnabled: e.target.checked })}
+                />
+                <div className="w-14 h-8 bg-white rounded-full border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-[#fbf5e9] after:border-2 after:border-[#1e1a18] after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:after:translate-x-full peer-checked:bg-cola-red group-hover:bg-black"></div>
+              </label>
+            </div>
+            <div className="mt-4 space-y-3">
+              {(settings.announcementMessages ?? []).map((message, index) => (
+                <label key={index} className="block text-xs font-bold uppercase tracking-wide text-espresso/75">
+                  Message {index + 1}
+                  <div className="mt-1 flex items-center gap-2">
+                    <input
+                      type="text"
+                      maxLength={240}
+                      value={message}
+                      onChange={(e) => updateAnnouncementMessage(index, e.target.value)}
+                      className={inputClass}
+                      placeholder={index === 0 ? "New drop every Friday" : "Add another announcement"}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeAnnouncementMessage(index)}
+                      aria-label={`Remove message ${index + 1}`}
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 border-[#1e1a18] bg-cola-red text-white shadow-[0_2px_0_#1e1a18] transition-colors hover:bg-black"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <span className="mt-1 block text-[11px] font-normal normal-case tracking-normal text-espresso/50">{message.length}/240 characters</span>
+                </label>
+              ))}
+              <button
+                type="button"
+                onClick={addAnnouncementMessage}
+                disabled={(settings.announcementMessages ?? []).length >= 10}
+                className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#1e1a18] bg-cola-red px-4 py-2 text-xs font-bold uppercase text-white shadow-[0_2px_0_#1e1a18] transition-colors hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Plus size={14} /> Add message
+              </button>
+              <p className="text-[11px] text-espresso/50">Messages rotate together in the scrolling banner. Add up to 10.</p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-2xl border-2 border-[#1e1a18] bg-white p-4 sm:p-5">
+            <div>
+              <h3 className="text-sm font-bold text-espresso">Customer review sections</h3>
+              <p className="mt-1 text-xs text-espresso/60">Show or hide reviews on the home and product pages, including review rating stats.</p>
+            </div>
+            <label className="group relative inline-flex items-center cursor-pointer select-none">
+              <span className="sr-only">Show customer review sections</span>
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={settings.reviewSectionEnabled ?? true}
+                onChange={(e) => setSettings({ ...settings, reviewSectionEnabled: e.target.checked })}
+              />
+              <div className="w-14 h-8 bg-white rounded-full border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-[#fbf5e9] after:border-2 after:border-[#1e1a18] after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:after:translate-x-full peer-checked:bg-cola-red group-hover:bg-black"></div>
             </label>
           </div>
         </section>
@@ -177,7 +327,7 @@ export default function AdminStorefront() {
             <button
               type="button"
               onClick={addSlide}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-espresso border-2 border-[#1e1a18] shadow-[0_2.5px_0_#1e1a18] active:translate-y-0.5 hover:text-cola-red text-xs font-semibold uppercase  transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-cola-red text-white border-2 border-[#1e1a18] shadow-[0_2.5px_0_#1e1a18] active:translate-y-0.5 hover:bg-black text-xs font-semibold uppercase transition-all cursor-pointer"
             >
               <Plus size={14} /> Add Slide
             </button>
@@ -232,7 +382,7 @@ export default function AdminStorefront() {
                     <button
                       type="button"
                       onClick={() => setResizingSlideIdx(i)}
-                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_1.5px_0_#1e1a18] text-[10px] font-bold text-espresso hover:text-cola-red cursor-pointer"
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-cola-red border-2 border-[#1e1a18] shadow-[0_1.5px_0_#1e1a18] text-[10px] font-bold text-white hover:bg-black cursor-pointer"
                     >
                       <CropIcon size={11} /> Resize
                     </button>
@@ -263,7 +413,7 @@ export default function AdminStorefront() {
                 <button
                   type="button"
                   onClick={() => removeSlide(i)}
-                  className="w-10 h-10 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_2.5px_0_#1e1a18] active:translate-y-0.5 flex items-center justify-center text-espresso hover:text-cola-red transition-all shrink-0 cursor-pointer self-start sm:self-center"
+                  className="w-10 h-10 rounded-full bg-cola-red border-2 border-[#1e1a18] shadow-[0_2.5px_0_#1e1a18] active:translate-y-0.5 flex items-center justify-center text-white hover:bg-black transition-all shrink-0 cursor-pointer self-start sm:self-center"
                   title="Remove Slide"
                 >
                   <Trash2 size={16} />

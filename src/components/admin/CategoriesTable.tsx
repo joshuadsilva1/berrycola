@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Pagination from "../Pagination";
 import { ImagePlus, Trash2, ArrowUp, ArrowDown, X, Sparkles } from "lucide-react";
 import {
   CATEGORY_ICONS,
@@ -36,10 +37,21 @@ export default function CategoriesTable({
   const [newCatName, setNewCatName] = useState("");
   const [newCatVisual, setNewCatVisual] = useState("");
   const [openIconPickerFor, setOpenIconPickerFor] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const perPage = 10;
 
   const allCategories = Array.from(
     new Set([...trendingCategories, ...customCategories]),
   );
+  const categoryRows = [
+    ...trendingCategories.map((cat, index) => ({ cat, isTrending: true, index })),
+    ...allCategories
+      .filter((cat) => !trendingCategories.includes(cat))
+      .map((cat) => ({ cat, isTrending: false, index: -1 })),
+  ];
+  const totalPages = Math.max(1, Math.ceil(categoryRows.length / perPage));
+  const currentPage = Math.min(page, totalPages);
+  const visibleCategoryRows = categoryRows.slice((currentPage - 1) * perPage, currentPage * perPage);
 
   const handleAddCategory = (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,13 +215,12 @@ export default function CategoriesTable({
             </tr>
           </thead>
           <tbody>
-            {/* Active (Trending) Categories First */}
-            {trendingCategories.map((cat, i) => (
+            {visibleCategoryRows.map(({ cat, isTrending, index }) => (
               <CategoryRow
                 key={cat}
                 cat={cat}
-                index={i}
-                isTrending={true}
+                index={index}
+                isTrending={isTrending}
                 totalTrending={trendingCategories.length}
                 visualValue={categoryImages[cat] || ""}
                 isPickerOpen={openIconPickerFor === cat}
@@ -221,35 +232,10 @@ export default function CategoriesTable({
                 }}
                 onRemoveVisual={() => removeCatVisual(cat)}
                 onToggleTrending={() => toggleTrending(cat)}
-                onMove={(dir) => moveTrending(i, dir)}
+                onMove={(dir) => index >= 0 && moveTrending(index, dir)}
                 onDelete={() => handleDelete(cat)}
               />
             ))}
-
-            {/* Inactive Categories Second */}
-            {allCategories
-              .filter((c) => !trendingCategories.includes(c))
-              .map((cat) => (
-                <CategoryRow
-                  key={cat}
-                  cat={cat}
-                  index={-1}
-                  isTrending={false}
-                  totalTrending={trendingCategories.length}
-                  visualValue={categoryImages[cat] || ""}
-                  isPickerOpen={openIconPickerFor === cat}
-                  onTogglePicker={() => setOpenIconPickerFor(openIconPickerFor === cat ? null : cat)}
-                  onUpload={(file) => onUploadImage(file, (url) => updateCatVisual(cat, url))}
-                  onSelectIcon={(iconVal) => {
-                    updateCatVisual(cat, iconVal);
-                    setOpenIconPickerFor(null);
-                  }}
-                  onRemoveVisual={() => removeCatVisual(cat)}
-                  onToggleTrending={() => toggleTrending(cat)}
-                  onMove={() => {}}
-                  onDelete={() => handleDelete(cat)}
-                />
-              ))}
 
             {allCategories.length === 0 && (
               <tr>
@@ -261,6 +247,7 @@ export default function CategoriesTable({
           </tbody>
         </table>
       </div>
+      <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={categoryRows.length} perPage={perPage} onPageChange={setPage} itemLabel="categories" />
     </section>
   );
 }
@@ -349,7 +336,7 @@ function CategoryRow({
           </div>
         </td>
         <td className="p-3.5 align-middle">
-          <div className="font-bold text-sm text-espresso truncate">{cat}</div>
+          <div className="font-bold text-sm text-espresso break-words whitespace-normal">{cat}</div>
           <div className="text-[11px] text-espresso/50">
             {visualValue ? (Icon ? "Icon active" : "PNG active") : "No visual"}
           </div>

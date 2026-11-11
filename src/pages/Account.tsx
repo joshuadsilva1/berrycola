@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LogOut, Edit2, Check, X, UploadCloud, User, MapPin, Phone, Mail, ArrowRight } from "lucide-react";
+import { LogOut, Edit2, Check, X, UploadCloud, User, MapPin, Phone, Mail, ArrowRight, ShoppingBag } from "lucide-react";
 import { updateProfile, updateEmail } from "firebase/auth";
 import { useAuth, isProfileComplete } from "../context/AuthContext";
 import { updateMyProfile } from "../lib/api";
-import CustomerOrders from "../components/CustomerOrders";
 
 const PAPER_TEXTURE = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E")`;
 
@@ -769,7 +768,7 @@ export default function Account() {
 
                 <div className="w-full flex flex-col gap-5 mt-2">
                   {/* NAME ROW */}
-                  <div className="relative flex items-end border-b-[1.5px] border-dashed border-espresso/40 pb-1">
+                  <div className="relative flex min-h-12 items-end border-b-[1.5px] border-dashed border-espresso/40 pb-1">
                     <span className="text-[10px] uppercase tracking-widest text-espresso font-semibold w-20 text-left">
                       Name
                     </span>
@@ -785,7 +784,7 @@ export default function Account() {
                       </div>
                     ) : (
                       <>
-                        <span className="font-handwritten text-3xl leading-none text-espresso/90 absolute left-20 bottom-1 -rotate-2 truncate max-w-[130px]">
+                        <span className="font-handwritten text-2xl leading-tight text-espresso/90 absolute left-20 right-16 bottom-1 -rotate-2 break-words whitespace-normal">
                           {profile?.name || firebaseUser?.displayName || "Guest"}
                         </span>
                         <button
@@ -802,7 +801,7 @@ export default function Account() {
                   </div>
 
                   {/* EMAIL ROW */}
-                  <div className="relative flex items-end border-b-[1.5px] border-dashed border-espresso/40 pb-1">
+                  <div className="relative flex min-h-12 items-end border-b-[1.5px] border-dashed border-espresso/40 pb-1">
                     <span className="text-[10px] uppercase tracking-widest text-espresso font-semibold w-20 text-left">
                       Email
                     </span>
@@ -811,10 +810,10 @@ export default function Account() {
                         type="email"
                         value={newEmail}
                         onChange={(e) => setNewEmail(e.target.value)}
-                        className="font-handwritten text-2xl leading-none text-espresso/90 bg-white/50 border border-espresso/20 rounded px-2 outline-none w-full -mb-1 shadow-inner truncate"
+                        className="font-handwritten text-base leading-tight text-espresso/90 bg-white/50 border border-espresso/20 rounded px-2 outline-none w-full -mb-1 shadow-inner"
                       />
                     ) : (
-                      <span className="font-handwritten text-2xl leading-none text-espresso/90 absolute left-20 bottom-1 truncate max-w-[160px]">
+                      <span className="font-handwritten text-base leading-tight text-espresso/90 absolute left-20 right-1 bottom-1 break-all whitespace-normal">
                         {profile?.email || firebaseUser?.email || "Unknown"}
                       </span>
                     )}
@@ -836,7 +835,7 @@ export default function Account() {
                       className="flex items-center gap-1.5 text-[9px] font-bold uppercase  text-espresso bg-espresso/5 hover:bg-cola-red hover:text-cream px-2 py-1 rounded-md border border-espresso/15 transition-all cursor-pointer shadow-sm ml-auto z-20"
                     >
                       <MapPin size={10} className="text-cola-red" />
-                      <span className="truncate max-w-[130px]">
+                      <span className="max-w-[130px] break-words whitespace-normal text-left">
                         {profile?.city ? `${profile.city}, ${profile.pincode}` : "+ Add Address"}
                       </span>
                     </button>
@@ -911,6 +910,16 @@ export default function Account() {
           </button>
         )}
 
+        {profileDone && (
+          <button
+            type="button"
+            onClick={() => navigate("/orders")}
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-white text-espresso border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] active:translate-y-0.5 hover:text-cola-red text-xs font-bold uppercase transition-all cursor-pointer"
+          >
+            <ShoppingBag size={13} /> My Orders
+          </button>
+        )}
+
         <button
           type="button"
           onClick={handleLogOut}
@@ -921,8 +930,6 @@ export default function Account() {
           {isLoggingOut ? "Signing out..." : "Sign Out"}
         </button>
       </div>
-
-      {firebaseUser && profileDone && <CustomerOrders />}
 
       {/* SHIPPING & DELIVERY ADDRESS MODAL */}
       {showDeliveryModal && (
@@ -996,7 +1003,7 @@ export default function Account() {
                         <Phone size={12} className="text-cola-red shrink-0" />
                         {profile?.phone || "—"}
                       </p>
-                      <p className="flex items-center gap-1.5 font-medium mt-1 truncate">
+                      <p className="flex min-w-0 items-start gap-1.5 font-medium mt-1 break-all whitespace-normal">
                         <Mail size={12} className="text-cola-red shrink-0" />
                         {profile?.email || "—"}
                       </p>
@@ -1004,7 +1011,7 @@ export default function Account() {
 
                     <div>
                       <span className="text-[10px] font-bold uppercase  text-espresso/50 block mb-0.5">Shipping Destination</span>
-                      <p className="font-medium leading-relaxed">
+                      <p className="font-medium leading-relaxed break-words whitespace-normal">
                         {profile?.address}
                         <br />
                         {profile?.city}{profile?.state ? `, ${profile.state}` : ""}

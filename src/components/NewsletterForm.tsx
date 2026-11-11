@@ -51,6 +51,9 @@ export default function NewsletterForm({ variant = "dark" }: { variant?: "dark" 
           {status === "loading" ? "…" : variant === "dark" ? "Join" : "Subscribe"}
         </button>
       </form>
+      <p className={variant === "dark" ? "mt-2 text-[10px] text-cream/55" : "mt-2 text-[10px] text-espresso/50"}>
+        Occasional launch and offer emails. Unsubscribe anytime.
+      </p>
       {status === "error" && (
         <p className="text-cola-red text-xs mt-2">Something went wrong, try again in a moment.</p>
       )}

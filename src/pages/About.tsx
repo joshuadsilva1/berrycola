@@ -82,7 +82,7 @@ export default function About() {
       </section>
 
       <section className="bg-espresso border-y-2 border-[#1e1a18] py-24 my-16">
-        <div className="mx-auto max-w-5xl px-6 grid grid-cols-2 sm:grid-cols-4 gap-8">
+        <div className={`mx-auto max-w-5xl px-6 grid grid-cols-2 ${storefront?.reviewSectionEnabled === false ? "sm:grid-cols-3" : "sm:grid-cols-4"} gap-8`}>
           <StatCounter
             value={storefront?.stats?.charmDesigns ?? (products ?? []).length}
             label="Charm Designs"
@@ -95,7 +95,7 @@ export default function About() {
             value={storefront?.stats?.charmsShipped ?? 0}
             label="Charms Ordered"
           />
-          {storefront?.stats?.averageRating != null ? (
+          {storefront?.reviewSectionEnabled !== false && (storefront?.stats?.averageRating != null ? (
             <StatCounter
               value={storefront.stats.averageRating}
               suffix="/5"
@@ -107,7 +107,7 @@ export default function About() {
               value={storefront?.stats?.totalReviews ?? 0}
               label="Verified Reviews"
             />
-          )}
+          ))}
         </div>
       </section>
 

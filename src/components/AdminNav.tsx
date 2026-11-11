@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import AdminNotificationCenter from "./AdminNotificationCenter";
 
 const TABS = [
   { label: "Analytics", to: "/admin/analytics" },
@@ -12,8 +13,9 @@ const TABS = [
 
 export default function AdminNav() {
   return (
-    <nav className="flex gap-2 mb-8 overflow-x-auto -mx-1 px-1 pb-1">
-      {TABS.map((tab) => (
+    <nav className="flex items-center justify-between gap-3 mb-8 -mx-1 px-1 pb-1">
+      <div className="flex min-w-0 gap-2 overflow-x-auto">
+        {TABS.map((tab) => (
         <NavLink
           key={tab.to}
           to={tab.to}
@@ -25,7 +27,9 @@ export default function AdminNav() {
         >
           {tab.label}
         </NavLink>
-      ))}
+        ))}
+      </div>
+      <AdminNotificationCenter />
     </nav>
   );
 }

@@ -24,6 +24,10 @@ export interface Product {
   deliveryMaxDays?: number | null;
   deliveryMinDate?: string | null;
   deliveryMaxDate?: string | null;
+  packageLengthCm?: number | null;
+  packageBreadthCm?: number | null;
+  packageHeightCm?: number | null;
+  packageWeightKg?: number | null;
 }
 
 // A zoomed-in view of the main photo: centre on (x, y) — fractions of the

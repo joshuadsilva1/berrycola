@@ -165,17 +165,17 @@ export default function ReviewsSection({
     <section className="py-16">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         {/* TOP HEADER & VERIFIED TRANSPARENCY BANNER */}
-        <div className="bg-[#fbf5e9] border-2 border-[#1e1a18] rounded-3xl p-6 sm:p-8 shadow-[0_5px_0_#1e1a18] mb-10">
+        <div className="bg-[#9e0821] border-2 border-[#1e1a18] rounded-3xl p-6 sm:p-8 shadow-[0_5px_0_#1e1a18] mb-10">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] text-[11px] font-semibold uppercase  text-espresso mb-3">
-                <ShieldCheck size={14} className="text-cola-red" />
+                <ShieldCheck size={14} className="text-[#fbf5e9]" />
                 100% Verified Buyers Only
               </div>
-              <h2 className="font-display text-2xl sm:text-3xl text-espresso">
+              <h2 className="font-display text-2xl sm:text-3xl text-[#fbf5e9]">
                 {productId ? "Collector Reviews & Photos" : "What Collectors Are Saying"}
               </h2>
-              <p className="text-sm text-espresso/65 mt-1 max-w-xl">
+              <p className="text-sm text-[#fbf5e9] mt-1 max-w-xl">
                 For complete transparency, only customers with a confirmed BerryCola order can post ratings and photos.
               </p>
             </div>

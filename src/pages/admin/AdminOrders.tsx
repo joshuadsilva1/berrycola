@@ -186,12 +186,15 @@ function AdminOrderRow({
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div>
           <p className="font-display text-espresso">#{order.id.slice(0, 8)}</p>
-          <p className="text-xs text-espresso/50">
+          <p className="max-w-full break-words whitespace-normal text-xs text-espresso/50">
             {order.customerName} · {order.customerEmail}
             {order.customerPhone ? ` · ${order.customerPhone}` : ""}
           </p>
         </div>
-        <span className="text-sm font-semibold text-espresso">₹{order.subtotal}</span>
+        <div className="text-right">
+          <span className="block text-sm font-semibold text-espresso">₹{(order.total ?? order.subtotal).toLocaleString("en-IN")}</span>
+          <span className="block text-[10px] uppercase tracking-wide text-espresso/50">{order.shippingMethod ?? "standard"} shipping · ₹{order.shippingFee ?? 0}</span>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4 text-[11px] font-semibold uppercase tracking-wide">

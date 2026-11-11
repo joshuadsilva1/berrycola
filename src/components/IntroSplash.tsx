@@ -3,10 +3,10 @@ import { motion, type Transition } from "framer-motion";
 import canClosed from "../assets/coke-closed.png";
 import canOpened from "../assets/coke-opened.png";
 import popSound from "../assets/coke-opening.mp3";
-import fairyCharm from "../assets/fairy.png";
-import batmanCharm from "../assets/batman.png";
-import marlboroCharm from "../assets/marlboro.png";
-import skullDiceCharm from "../assets/charm-skull-dice.png";
+import fairyCharm from "../assets/charizard charm new.png";
+import batmanCharm from "../assets/batman and batfairy.png";
+import marlboroCharm from "../assets/gacha pouch.png";
+import skullDiceCharm from "../assets/lip bam charm.png";
 
 interface IntroSplashProps {
   onFinish: () => void;
