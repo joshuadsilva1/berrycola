@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Clock3, ExternalLink, MapPin, RefreshCw, ShoppingBag, Truck } from "lucide-react";
 import OrderStatusTracker from "./OrderStatusTracker";
 import { fetchMyOrders, syncMyOrderTracking, type Order } from "../lib/api";
+import Pagination from "./Pagination";
 import { STATUS_LABELS } from "../lib/orderStatus";
 import { useOrderUpdates } from "../context/OrderUpdatesContext";
 
@@ -37,11 +38,18 @@ export default function CustomerOrders() {
   const [refreshing, setRefreshing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const perPage = 10;
 
   const loadOrders = useCallback(async () => {
     setError(null);
     try {
-      setOrders(await fetchMyOrders());
+      const result = await fetchMyOrders(page, perPage);
+      setOrders(result.items);
+      setTotalOrders(result.total);
+      setTotalPages(result.totalPages);
       return true;
     } catch (err) {
       setError((err as Error).message || "Couldn't load your orders.");
@@ -49,7 +57,7 @@ export default function CustomerOrders() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, trackingOpen]);
 
   useEffect(() => {
     void loadOrders().then((loaded) => { if (loaded) void markSeen(); });
@@ -81,7 +89,7 @@ export default function CustomerOrders() {
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-cola-red">Your BerryCola history</p>
           <h2 id="customer-orders-title" className="font-display text-3xl text-espresso mt-1">My orders</h2>
-          <p className="text-sm text-espresso/60 mt-1">Order updates and shipment scans appear here.</p>
+          <p className="text-sm text-espresso/60 mt-1">{totalOrders} order{totalOrders === 1 ? "" : "s"} · updates and shipment scans appear here.</p>
         </div>
         <button
           type="button"
@@ -255,6 +263,9 @@ export default function CustomerOrders() {
           );
         })}
       </div>
+      {!loading && !error && (
+        <Pagination currentPage={page} totalPages={totalPages} totalItems={totalOrders} perPage={perPage} onPageChange={setPage} itemLabel="orders" />
+      )}
     </section>
   );
 }

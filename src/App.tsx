@@ -108,6 +108,49 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const findControl = (target: EventTarget | null) =>
+      target instanceof Element ? target.closest<HTMLElement>("button[data-ripple], a[data-ripple]") : null;
+    const updatePointer = (event: PointerEvent, force = false) => {
+      const control = findControl(event.target);
+      if (!control) return;
+      if (!force && control.classList.contains("is-hover-rippling")) return;
+      const rect = control.getBoundingClientRect();
+      control.style.setProperty("--pointer-x", `${event.clientX - rect.left}px`);
+      control.style.setProperty("--pointer-y", `${event.clientY - rect.top}px`);
+      control.style.setProperty("--ripple-diameter", `${Math.ceil(Math.hypot(rect.width, rect.height) * 2)}px`);
+      control.classList.add("ripple-control");
+    };
+    const startHoverRipple = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
+      const control = findControl(event.target);
+      if (!control || (event.relatedTarget instanceof Node && control.contains(event.relatedTarget))) return;
+      updatePointer(event, true);
+      control.classList.remove("is-hover-rippling");
+      void control.offsetWidth;
+      control.classList.add("is-hover-rippling");
+      window.setTimeout(() => control.classList.remove("is-hover-rippling"), 10);
+    };
+    const startRipple = (event: PointerEvent) => {
+      const control = findControl(event.target);
+      if (!control || control.matches(":disabled")) return;
+      updatePointer(event, true);
+      control.classList.remove("is-rippling");
+      void control.offsetWidth;
+      control.classList.add("is-rippling");
+      window.setTimeout(() => control.classList.remove("is-rippling"), 10);
+    };
+
+    document.addEventListener("pointermove", updatePointer, true);
+    document.addEventListener("pointerover", startHoverRipple, true);
+    document.addEventListener("pointerdown", startRipple, true);
+    return () => {
+      document.removeEventListener("pointermove", updatePointer, true);
+      document.removeEventListener("pointerover", startHoverRipple, true);
+      document.removeEventListener("pointerdown", startRipple, true);
+    };
+  }, []);
+
+  useEffect(() => {
     const loadStorefront = () => {
       fetchStorefront().then((data) => {
         setStoreConfig(data);

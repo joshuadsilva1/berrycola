@@ -7,10 +7,10 @@ import shoppingCart from "../assets/shopping-cart.png";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useOrderUpdates } from "../context/OrderUpdatesContext";
+import { fetchCategories } from "../lib/api";
 
 const NAV_LINKS = [
   { label: "Shop", href: "/shop" },
-  { label: "Bag Charms", href: "/shop?category=Bag+Charms" },
   { label: "Our Story", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];
@@ -18,6 +18,7 @@ const NAV_LINKS = [
 export default function Navbar({ announcementVisible = false }: { announcementVisible?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
   const { count, openCart } = useCart();
   const { firebaseUser, profile } = useAuth();
   const { updates } = useOrderUpdates();
@@ -28,6 +29,10 @@ export default function Navbar({ announcementVisible = false }: { announcementVi
     onScroll();
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    fetchCategories().then(setCategories).catch(console.error);
   }, []);
 
   useEffect(() => setMenuOpen(false), [location]);
@@ -55,7 +60,10 @@ export default function Navbar({ announcementVisible = false }: { announcementVi
           </Link>
 
           <nav className="hidden md:flex items-center gap-9">
-            {NAV_LINKS.map((link) => (
+            {[NAV_LINKS[0], ...categories.map((category) => ({
+              label: category,
+              href: `/shop?category=${encodeURIComponent(category)}`,
+            })), ...NAV_LINKS.slice(1)].map((link) => (
               <Link
                 key={link.label}
                 to={link.href}
@@ -75,6 +83,8 @@ export default function Navbar({ announcementVisible = false }: { announcementVi
           <div className="flex items-center gap-3">
             <button
               aria-label="Search"
+              data-ripple
+              data-ripple-tone="red"
               className="hidden sm:flex w-9 h-9 items-center justify-center rounded-full bg-cola-red border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-[#fbf5e9] hover:text-black transition-all"
             >
               <Search size={17} />
@@ -82,6 +92,8 @@ export default function Navbar({ announcementVisible = false }: { announcementVi
             <Link
               to={firebaseUser ? "/account" : "/login"}
               aria-label={firebaseUser ? "Account" : "Login"}
+              data-ripple
+              data-ripple-tone="red"
               className="relative hidden sm:flex w-9 h-9 items-center justify-center rounded-full bg-cola-red border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-[#fbf5e9] hover:text-black transition-all"
             >
               <User size={17} />
@@ -94,6 +106,8 @@ export default function Navbar({ announcementVisible = false }: { announcementVi
                 to="/admin/analytics"
                 aria-label="Admin dashboard"
                 title="Admin dashboard"
+                data-ripple
+                data-ripple-tone="red"
                 className="flex w-9 h-9 items-center justify-center rounded-full bg-cola-red border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-[#fbf5e9] hover:text-black transition-all"
               >
                 <LayoutDashboard size={17} />
@@ -101,6 +115,8 @@ export default function Navbar({ announcementVisible = false }: { announcementVi
             )}
             <button
               aria-label="Open cart"
+              data-ripple
+              data-ripple-tone="red"
               onClick={openCart}
               className="group relative flex w-9 h-9 items-center justify-center rounded-full bg-cola-red border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-cola-red hover:text-black transition-all"
             >
@@ -133,6 +149,8 @@ export default function Navbar({ announcementVisible = false }: { announcementVi
             </button>
             <button
               aria-label="Toggle menu"
+              data-ripple
+              data-ripple-tone="cream"
               onClick={() => setMenuOpen((v) => !v)}
               className="md:hidden flex w-9 h-9 items-center justify-center rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-espresso hover:text-cola-red transition-all"
             >

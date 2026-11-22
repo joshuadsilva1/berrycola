@@ -102,6 +102,29 @@ export async function fetchProducts(category?: Category | null): Promise<Product
   return list.map(normalizeProduct);
 }
 
+export interface PaginatedResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  perPage: number;
+  totalPages: number;
+}
+
+export async function fetchProductPage(params: {
+  page: number;
+  perPage?: number;
+  category?: Category | null;
+  categories?: Category[];
+  sort?: "featured" | "price-asc" | "price-desc";
+}): Promise<PaginatedResult<Product>> {
+  const query = new URLSearchParams({ page: String(params.page), per_page: String(params.perPage ?? 12) });
+  if (params.category) query.set("category", params.category);
+  if (params.categories?.length) query.set("categories", params.categories.join(","));
+  if (params.sort && params.sort !== "featured") query.set("sort", params.sort);
+  const result = await request<PaginatedResult<Product>>(`/products?${query.toString()}`);
+  return { ...result, items: result.items.map(normalizeProduct) };
+}
+
 export async function fetchProduct(id: string): Promise<Product> {
   const item = await request<Product>(`/products/${id}`);
   return normalizeProduct(item);
@@ -165,6 +188,7 @@ export interface Order {
   total?: number;
   status: string;
   paymentStatus?: string;
+  shipmentError?: string;
   refundStatus?: string | null;
   carrier: string | null;
   trackingId: string | null;
@@ -223,8 +247,8 @@ export function verifyRazorpayPayment(payload: {
   });
 }
 
-export function fetchMyOrders() {
-  return authRequest<Order[]>("/orders/mine");
+export function fetchMyOrders(page = 1, perPage = 10) {
+  return authRequest<PaginatedResult<Order>>(`/orders/mine?page=${page}&per_page=${perPage}`);
 }
 
 export function syncMyOrderTracking(id: string) {
@@ -268,12 +292,14 @@ export function updateMyProfile(payload: ProfileUpdateInput) {
   return authRequest("/me", { method: "PATCH", body: JSON.stringify(payload) });
 }
 
-export function fetchAdminOrders(params?: { status?: string; q?: string }) {
+export function fetchAdminOrders(params?: { status?: string; q?: string; page?: number; perPage?: number }) {
   const search = new URLSearchParams();
   if (params?.status) search.set("status", params.status);
   if (params?.q) search.set("q", params.q);
+  if (params?.page) search.set("page", String(params.page));
+  if (params?.perPage) search.set("per_page", String(params.perPage));
   const query = search.toString();
-  return authRequest<Order[]>(`/admin/orders${query ? `?${query}` : ""}`);
+  return authRequest<PaginatedResult<Order>>(`/admin/orders${query ? `?${query}` : ""}`);
 }
 
 export interface AdminNotification {
@@ -597,11 +623,18 @@ export function fetchCustomers(page = 1, perPage = 10, search = "") {
 export interface AdminMessages {
   messages: { id: number; name: string; email: string; subject: string | null; message: string; createdAt: string | null }[];
   subscribers: { email: string; createdAt: string | null }[];
+  messagesPage: number;
+  messagesTotalPages: number;
+  messagesTotal: number;
+  subscribersPage: number;
+  subscribersTotalPages: number;
   subscribersTotal: number;
+  perPage: number;
 }
 
-export function fetchMessages() {
-  return authRequest<AdminMessages>("/admin/messages");
+export function fetchMessages(messagePage = 1, subscriberPage = 1, perPage = 10) {
+  const query = new URLSearchParams({ msg_page: String(messagePage), sub_page: String(subscriberPage), per_page: String(perPage) });
+  return authRequest<AdminMessages>(`/admin/messages?${query.toString()}`);
 }
 
 export function sendNewsletterCampaign(payload: { subject: string; body: string }) {
@@ -718,8 +751,8 @@ export interface PromoCode {
   createdAt: string;
 }
 
-export function fetchAdminPromos() {
-  return authRequest<PromoCode[]>("/admin/promos");
+export function fetchAdminPromos(page = 1, perPage = 10) {
+  return authRequest<PaginatedResult<PromoCode>>(`/admin/promos?page=${page}&per_page=${perPage}`);
 }
 
 export function createPromo(payload: Partial<PromoCode>) {

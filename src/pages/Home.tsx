@@ -11,7 +11,7 @@ import Marquee from "../components/Marquee";
 import StatCounter from "../components/StatCounter";
 import NewsletterForm from "../components/NewsletterForm";
 import { useProducts } from "../hooks/useCatalog";
-import { fetchStorefront, type StorefrontSettings } from "../lib/api";
+import { fetchCategories, fetchStorefront, type StorefrontSettings } from "../lib/api";
 
 import skullDiceCharm from "../assets/charizard charm new.png";
 import gachaPouch from "../assets/gacha pouch.png";
@@ -34,17 +34,19 @@ const categoryCopy: Record<string, string> = {
 export default function Home() {
   const { data: products, loading: productsLoading } = useProducts();
   const [storefront, setStorefront] = useState<StorefrontSettings | null>(null);
+  const [catalogCategories, setCatalogCategories] = useState<string[]>([]);
 
   useEffect(() => {
     fetchStorefront().then(setStorefront).catch(console.error);
+    fetchCategories().then(setCatalogCategories).catch(console.error);
   }, []);
 
   const homeCategories = useMemo(() => {
     if (storefront && storefront.trendingCategories.length > 0) {
       return storefront.trendingCategories;
     }
-    return Array.from(new Set((products ?? []).map((p) => p.category).filter(Boolean)));
-  }, [storefront, products]);
+    return catalogCategories;
+  }, [storefront, catalogCategories]);
 
   const bestsellers = useMemo(() => {
     const all = products ?? [];
@@ -69,36 +71,27 @@ export default function Home() {
 
         <div className="relative z-10 mx-auto w-full max-w-4xl px-5 pt-20 text-center sm:px-6 sm:pt-16 md:pt-0">
           <motion.span initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6 }} className="mb-5 inline-block rounded-full border-2 border-[#1e1a18] bg-[#fbf5e9] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-cola-red shadow-[0_2px_0_#1e1a18] sm:mb-6 sm:px-4 sm:text-xs sm:tracking-[0.22em]">
-            New Drop · Bag Charms Collection
+            New Drop · {homeCategories[0] ?? "New Collection"}
           </motion.span>
           <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="font-display text-[clamp(2.35rem,9vw,3.75rem)] leading-[1.05] text-espresso sm:text-6xl md:text-7xl">
-            <span className="block whitespace-nowrap">Small charms.</span>
+            <span className="block whitespace-nowrap">big charms.</span>
             <span className="block whitespace-nowrap text-cola-red">Big statements.</span>
           </motion.h1>
           <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.7 }} className="mx-auto mt-4 max-w-[34ch] text-base font-normal leading-relaxed text-espresso/65 text-balance sm:mt-6 sm:max-w-xl sm:text-lg">
             Hand-finished charms designed to be clipped, swapped, and carried on everything, bags, belt loops, phones, keys. Build a lineup that's entirely, unmistakably yours.
           </motion.p>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.7 }} className="mx-auto mt-6 grid max-w-[340px] grid-cols-2 items-center justify-center gap-3 sm:mt-10 sm:flex sm:max-w-none sm:flex-wrap sm:gap-4">
-            <Link to="/shop" className="group inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-[#1e1a18] bg-cola-red px-3 py-3 text-xs font-semibold tracking-wide text-[#fbf5e9] shadow-[0_4px_0_#1e1a18] transition-all hover:bg-[#b81d1d] active:translate-y-0.5 sm:gap-2 sm:px-8 sm:py-3.5 sm:text-base">
+            <Link to="/shop" data-ripple data-ripple-tone="red" className="group inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-[#1e1a18] bg-cola-red px-3 py-3 text-xs font-semibold tracking-wide text-[#fbf5e9] shadow-[0_4px_0_#1e1a18] transition-all hover:bg-[#b81d1d] hover:text-[#fbf5e9] active:translate-y-0.5 sm:gap-2 sm:px-8 sm:py-3.5 sm:text-base">
               Shop the Drop <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
             </Link>
-            <Link to="/about" className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-[#1e1a18] bg-[#fbf5e9] px-3 py-3 text-xs font-semibold tracking-wide text-espresso shadow-[0_4px_0_#1e1a18] transition-all hover:text-cola-red active:translate-y-0.5 sm:gap-2 sm:px-8 sm:py-3.5 sm:text-base">
+            <Link to="/about" data-ripple data-ripple-tone="cream" className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-2 border-[#1e1a18] bg-[#fbf5e9] px-3 py-3 text-xs font-semibold tracking-wide text-espresso shadow-[0_4px_0_#1e1a18] transition-all hover:text-[#fbf5e9] active:translate-y-0.5 sm:gap-2 sm:px-8 sm:py-3.5 sm:text-base">
               Our Story
             </Link>
           </motion.div>
         </div>
       </section>
 
-      {/* MARQUEE */}
-      <div className="bg-espresso border-y-2 border-[#1e1a18] py-3">
-        <Marquee speed={22}>
-          {["Free shipping over ₹999", "New drop every Friday", "Made to stack", "100% Verified Buyer Reviews"].map((t, i) => (
-            <span key={i} className="mx-6 text-cream/85 text-sm uppercase tracking-[0.2em] flex items-center gap-6">
-              {t} <span className="w-1.5 h-1.5 rounded-full bg-cola-red" />
-            </span>
-          ))}
-        </Marquee>
-      </div>
+
 
       {/* BESTSELLERS */}
       <section className="mx-auto max-w-7xl px-5 sm:px-8 py-24">
@@ -132,43 +125,47 @@ export default function Home() {
             </Reveal>
             <div className="flex flex-wrap justify-center gap-6">
               {homeCategories.map((cat, i) => {
-                const coverValue = storefront?.categoryImages?.[cat];
-                const Icon = getCategoryIconComponent(coverValue);
-                const copy = categoryCopy[cat] || `Explore our latest collection of ${cat}.`;
-                
-                return (
-                  <Reveal key={cat} delay={i * 0.08} className="w-full sm:w-64 md:w-72">
-                    <Link
-                      to={`/shop?category=${encodeURIComponent(cat)}`}
-                      className="group flex flex-col items-center justify-center text-center h-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_5px_0_#1e1a18] hover:-translate-y-0.5 active:translate-y-0.5 rounded-3xl p-7 transition-all"
-                    >
-                      {coverValue && (
-                        <motion.div
-                          className="flex justify-center mb-4"
-                          whileHover={{ scale: 1.06, rotate: -3 }}
-                          transition={{ type: "spring", stiffness: 260 }}
-                        >
-                          {Icon ? (
-                            <div className="w-20 h-20 rounded-full bg-white border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] flex items-center justify-center text-espresso group-hover:text-cola-red transition-all">
-                              <Icon size={32} />
-                            </div>
-                          ) : (
-                            <div className="w-24 h-24 rounded-full bg-white border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] flex items-center justify-center p-3 transition-all">
-                              <img
-                                src={coverValue}
-                                alt={cat}
-                                className="w-full h-full object-contain"
-                              />
-                            </div>
-                          )}
-                        </motion.div>
-                      )}
-                      <h3 className="font-display text-xl text-espresso group-hover:text-cola-red transition-colors">{cat}</h3>
-                      <p className="text-sm text-espresso/60 mt-1.5">{copy}</p>
-                    </Link>
-                  </Reveal>
-                );
-              })}
+  const coverValue = storefront?.categoryImages?.[cat];
+  const Icon = getCategoryIconComponent(coverValue);
+  const copy = categoryCopy[cat] || `Explore our latest collection of ${cat}.`;
+
+  return (
+    <Reveal key={cat} delay={i * 0.08} className="w-full sm:w-64 md:w-72">
+      <Link
+        to={`/shop?category=${encodeURIComponent(cat)}`}
+        className="group flex flex-col items-center justify-center text-center h-full bg-[#fbf5e9] hover:bg-cola-red border-2 border-[#1e1a18] shadow-[0_5px_0_#1e1a18] hover:-translate-y-0.5 active:translate-y-0.5 rounded-3xl p-7 transition-[background-color,color,transform] duration-150"
+      >
+        {coverValue && (
+          <motion.div
+            className="flex justify-center mb-4"
+            whileHover={{ scale: 1.06, rotate: -3 }}
+            transition={{ type: "spring", stiffness: 260 }}
+          >
+            {Icon ? (
+              <div className="w-20 h-20 rounded-full bg-white border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] flex items-center justify-center text-espresso group-hover:bg-[#fbf5e9] group-hover:text-cola-red transition-colors duration-150">
+                <Icon size={32} />
+              </div>
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-white border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] flex items-center justify-center p-3 group-hover:bg-[#fbf5e9] transition-colors duration-150">
+                <img
+                  src={coverValue}
+                  alt={cat}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            )}
+          </motion.div>
+        )}
+        <h3 className="font-display text-xl text-espresso group-hover:text-cream transition-colors duration-150">
+          {cat}
+        </h3>
+        <p className="text-sm text-espresso/60 mt-1.5 group-hover:text-cream/85 transition-colors duration-150">
+          {copy}
+        </p>
+      </Link>
+    </Reveal>
+  );
+})}
             </div>
           </div>
         </section>

@@ -322,6 +322,8 @@ export default function ImageResizerModal({
           <button
             type="button"
             onClick={onCancel}
+            data-ripple
+            data-ripple-tone="cream"
             className="w-9 h-9 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] active:translate-y-0.5 flex items-center justify-center text-espresso hover:text-cola-red cursor-pointer"
           >
             <X size={16} />

@@ -56,6 +56,8 @@ export default function ProductCard({ product, index = 0 }: { product: Product; 
             onClick={handleShare}
             title={copied ? "Link copied!" : "Share product link"}
             aria-label={`Share ${product.name}`}
+            data-ripple
+            data-ripple-tone="cream"
             className="absolute top-3.5 right-3.5 z-10 w-8 h-8 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] active:translate-y-0.5 flex items-center justify-center text-espresso hover:text-cola-red transition-all duration-200 cursor-pointer"
           >
             {copied ? <Check size={13} className="text-green-700" /> : <Share2 size={13} />}

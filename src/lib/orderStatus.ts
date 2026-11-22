@@ -10,7 +10,7 @@ export const ORDER_STATUSES = [
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: "Pending",
+  pending: "Awaiting approval",
   confirmed: "Confirmed",
   shipped: "Shipped",
   out_for_delivery: "Out for delivery",

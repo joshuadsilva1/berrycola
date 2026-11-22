@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Copy, Mail, Send } from "lucide-react";
 import AdminNav from "../../components/AdminNav";
 import { fetchMessages, sendNewsletterCampaign, type AdminMessages as Messages } from "../../lib/api";
+import Pagination from "../../components/Pagination";
 
 const when = (iso: string | null) =>
   iso
@@ -17,12 +18,17 @@ export default function AdminMessages() {
   const [sending, setSending] = useState(false);
   const [campaignMessage, setCampaignMessage] = useState<string | null>(null);
   const [campaignError, setCampaignError] = useState<string | null>(null);
+  const [messagePage, setMessagePage] = useState(1);
+  const [subscriberPage, setSubscriberPage] = useState(1);
+  const perPage = 10;
 
   useEffect(() => {
-    fetchMessages()
-      .then(setData)
-      .catch(() => setError("Couldn't load messages."));
-  }, []);
+    let active = true;
+    fetchMessages(messagePage, subscriberPage, perPage)
+      .then((result) => { if (active) setData(result); })
+      .catch(() => { if (active) setError("Couldn't load messages."); });
+    return () => { active = false; };
+  }, [messagePage, subscriberPage]);
 
   const copyEmails = async () => {
     if (!data) return;
@@ -63,7 +69,7 @@ export default function AdminMessages() {
         <div className="grid lg:grid-cols-3 gap-8">
           <section className="lg:col-span-2">
             <h1 className="font-display text-3xl text-espresso mb-6">
-              Contact messages <span className="text-espresso/40 text-xl">{data.messages.length}</span>
+              Contact messages <span className="text-espresso/40 text-xl">{data.messagesTotal}</span>
             </h1>
             <div className="flex flex-col gap-4">
               {data.messages.map((m) => (
@@ -88,19 +94,20 @@ export default function AdminMessages() {
               ))}
               {data.messages.length === 0 && <p className="text-sm text-espresso/45">No messages yet.</p>}
             </div>
+            <Pagination currentPage={messagePage} totalPages={data.messagesTotalPages} totalItems={data.messagesTotal} perPage={perPage} onPageChange={setMessagePage} itemLabel="messages" />
           </section>
 
           <section>
             <div className="flex items-center justify-between gap-3 mb-6">
               <h2 className="font-display text-2xl text-espresso">
-                Newsletter <span className="text-espresso/40 text-lg">{data.subscribers.length}</span>
+                Newsletter <span className="text-espresso/40 text-lg">{data.subscribersTotal}</span>
               </h2>
               {data.subscribers.length > 0 && (
                 <button
                   onClick={copyEmails}
                   className="flex items-center gap-1.5 text-xs font-semibold text-cola-red hover:underline"
                 >
-                  <Copy size={13} /> {copied ? "Copied!" : "Copy all emails"}
+                  <Copy size={13} /> {copied ? "Copied!" : "Copy page emails"}
                 </button>
               )}
             </div>
@@ -115,6 +122,7 @@ export default function AdminMessages() {
                 <li className="px-4 py-6 text-sm text-center text-espresso/45">No subscribers yet.</li>
               )}
             </ul>
+            <Pagination currentPage={subscriberPage} totalPages={data.subscribersTotalPages} totalItems={data.subscribersTotal} perPage={perPage} onPageChange={setSubscriberPage} itemLabel="subscribers" />
             <form onSubmit={sendCampaign} className="mt-6 rounded-2xl border border-espresso/10 p-4">
               <h3 className="font-display text-xl text-espresso">Email a campaign</h3>
               <p className="mt-1 text-xs text-espresso/55">

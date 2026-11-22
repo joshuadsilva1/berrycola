@@ -303,6 +303,7 @@ function CategoryRow({
                   type="button"
                   onClick={onRemoveVisual}
                   title="Remove visual"
+                  data-ripple
                   className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_1px_0_#1e1a18] text-espresso flex items-center justify-center hover:text-cola-red cursor-pointer"
                 >
                   <X size={10} />
@@ -380,6 +381,7 @@ function CategoryRow({
               onClick={onDelete}
               className={keycapSmClass}
               title={`Delete ${cat}`}
+                  data-ripple
             >
               <Trash2 size={14} />
             </button>

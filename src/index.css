@@ -67,6 +67,74 @@ body {
   text-wrap: balance;
 }
 
+/* Ripple feedback is limited to controls explicitly marked with data-ripple.
+   Pointer coordinates are set by App.tsx. */
+.ripple-control {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition: background-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.ripple-control::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: var(--pointer-x, 50%);
+  top: var(--pointer-y, 50%);
+  width: var(--ripple-diameter, 240px);
+  height: var(--ripple-diameter, 240px);
+  border-radius: 9999px;
+  background: #9e0821;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0);
+}
+
+.ripple-control.is-rippling::before,
+.ripple-control.is-hover-rippling::before {
+  animation: pointer-ripple 10ms cubic-bezier(0.2, 0.75, 0.25, 1) forwards;
+}
+
+.ripple-control[data-ripple-tone="red"]::before,
+.ripple-control[class*="bg-cola-red"]::before { background: #fbf5e9; }
+.ripple-control[data-ripple-tone="cream"]::before,
+.ripple-control[class*="bg-[#fbf5e9]"]::before,
+.ripple-control[class*="bg-cream"]::before,
+.ripple-control[class*="bg-white"]::before { background: #9e0821; }
+
+.ripple-control > :not([class*="absolute"]) {
+  position: relative;
+  z-index: 1;
+}
+
+@media (hover: hover) {
+  :is(button, a)[data-ripple][data-ripple-tone="red"][class*="bg-cola-red"]:hover {
+    background-color: #fbf5e9 !important;
+    color: #9e0821 !important;
+  }
+
+  :is(button, a)[data-ripple][data-ripple-tone="cream"][class*="bg-[#fbf5e9]"]:hover,
+  :is(button, a)[data-ripple][data-ripple-tone="cream"][class*="bg-cream"]:hover,
+  :is(button, a)[data-ripple][data-ripple-tone="cream"][class*="bg-white"]:hover {
+    background-color: #9e0821 !important;
+    color: #fbf5e9 !important;
+  }
+}
+
+@keyframes pointer-ripple {
+  0% { opacity: 0.95; transform: translate(-50%, -50%) scale(0); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ripple-control,
+  .ripple-control::before {
+    transition: none;
+    animation-duration: 1ms !important;
+  }
+}
+
 @media (max-width: 767px) {
   .home-hero-charm {
     width: min(36vw, 140px) !important;

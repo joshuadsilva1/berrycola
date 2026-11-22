@@ -375,6 +375,8 @@ export default function CheckoutReceipt() {
             }}
             title={muted ? "Unmute printer sound" : "Mute printer sound"}
             aria-label={muted ? "Unmute printer sound" : "Mute printer sound"}
+            data-ripple
+            data-ripple-tone="cream"
             className="w-9 h-9 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 flex items-center justify-center text-espresso hover:text-cola-red transition-all cursor-pointer"
           >
             {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
@@ -699,7 +701,7 @@ export default function CheckoutReceipt() {
           )}
           {completedOrder ? (
             <div className="mt-4 border border-emerald-700/30 bg-emerald-50 p-3 text-sm text-emerald-950">
-              Payment received for order #{completedOrder.id.slice(0, 8).toUpperCase()}. Your order is confirmed.
+              Payment received for order #{completedOrder.id.slice(0, 8).toUpperCase()}. Your order is awaiting admin approval.
             </div>
           ) : (
             <>

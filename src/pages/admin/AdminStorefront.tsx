@@ -4,6 +4,7 @@ import AdminNav from "../../components/AdminNav";
 import CategoriesTable from "../../components/admin/CategoriesTable";
 import ImageResizerModal from "../../components/admin/ImageResizerModal";
 import ProductPageDetailsEditor from "../../components/admin/ProductPageDetailsEditor";
+import Pagination from "../../components/Pagination";
 import {
   fetchStorefront,
   updateStorefront,
@@ -22,6 +23,8 @@ export default function AdminStorefront() {
   const [uploadingUrl, setUploadingUrl] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [resizingSlideIdx, setResizingSlideIdx] = useState<number | null>(null);
+  const [slidePage, setSlidePage] = useState(1);
+  const slidesPerPage = 10;
 
   useEffect(() => {
     async function loadStorefrontData() {
@@ -85,7 +88,9 @@ export default function AdminStorefront() {
   };
 
   const removeSlide = (index: number) => {
-    setSettings({ ...settings, sliderSlides: settings.sliderSlides.filter((_, i) => i !== index) });
+    const slides = settings.sliderSlides.filter((_, i) => i !== index);
+    setSettings({ ...settings, sliderSlides: slides });
+    setSlidePage((current) => Math.min(current, Math.max(1, Math.ceil(slides.length / slidesPerPage))));
   };
 
   const addSlide = () => {
@@ -93,6 +98,7 @@ export default function AdminStorefront() {
       ...settings,
       sliderSlides: [...settings.sliderSlides, { imageUrl: "", title: "", link: "" }],
     });
+    setSlidePage(Math.max(1, Math.ceil((settings.sliderSlides.length + 1) / slidesPerPage)));
   };
 
   const updateAnnouncementMessage = (index: number, value: string) => {
@@ -277,6 +283,8 @@ export default function AdminStorefront() {
                       type="button"
                       onClick={() => removeAnnouncementMessage(index)}
                       aria-label={`Remove message ${index + 1}`}
+                      data-ripple
+                      data-ripple-tone="red"
                       className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 border-[#1e1a18] bg-cola-red text-white shadow-[0_2px_0_#1e1a18] transition-colors hover:bg-black"
                     >
                       <Trash2 size={16} />
@@ -334,7 +342,7 @@ export default function AdminStorefront() {
           </div>
 
           <div className="flex flex-col gap-4">
-            {settings.sliderSlides.map((slide, i) => (
+            {settings.sliderSlides.map((slide, i) => ({ slide, i })).slice((slidePage - 1) * slidesPerPage, slidePage * slidesPerPage).map(({ slide, i }) => (
               <div
                 key={i}
                 className="bg-white border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start gap-4"
@@ -425,6 +433,9 @@ export default function AdminStorefront() {
               <div className="p-8 text-center border-2 border-dashed border-[#1e1a18]/20 rounded-2xl bg-white text-sm text-espresso/50">
                 No hero slides added yet. Click "+ Add Slide" above to introduce promotional banners.
               </div>
+            )}
+            {settings.sliderSlides.length > 0 && (
+              <Pagination currentPage={slidePage} totalPages={Math.ceil(settings.sliderSlides.length / slidesPerPage)} totalItems={settings.sliderSlides.length} perPage={slidesPerPage} onPageChange={setSlidePage} itemLabel="slides" />
             )}
           </div>
         </section>

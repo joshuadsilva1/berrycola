@@ -302,6 +302,8 @@ export default function CartDrawer() {
                   closeCart();
                 }}
                 aria-label="Close bag"
+                data-ripple
+                data-ripple-tone="cream"
                 className="w-9 h-9 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 flex items-center justify-center text-espresso hover:text-cola-red transition-all"
               >
                 <X size={18} />
@@ -389,6 +391,7 @@ export default function CartDrawer() {
                                 onClick={() => handleQtyChange(item, -1)}
                                 className="hover:text-cola-red transition-colors px-0.5"
                                 aria-label="Decrease quantity"
+                                data-ripple
                               >
                                 <Minus size={10} />
                               </button>
@@ -397,6 +400,7 @@ export default function CartDrawer() {
                                 onClick={() => handleQtyChange(item, 1)}
                                 className="hover:text-cola-red transition-colors px-0.5"
                                 aria-label="Increase quantity"
+                                data-ripple
                               >
                                 <Plus size={10} />
                               </button>

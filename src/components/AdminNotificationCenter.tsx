@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Bell, Check, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { fetchAdminNotifications, type AdminNotification } from "../lib/api";
+import Pagination from "./Pagination";
 
 const STORAGE_KEY = "bc-admin-dismissed-notifications";
 
@@ -17,6 +18,8 @@ export default function AdminNotificationCenter() {
   const [items, setItems] = useState<AdminNotification[]>([]);
   const [dismissed, setDismissed] = useState<string[]>(readDismissed);
   const [open, setOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const perPage = 10;
 
   useEffect(() => {
     let active = true;
@@ -29,6 +32,7 @@ export default function AdminNotificationCenter() {
   }, []);
 
   const visible = useMemo(() => items.filter((item) => !dismissed.includes(item.id)), [items, dismissed]);
+  const totalPages = Math.max(1, Math.ceil(visible.length / perPage));
 
   const dismiss = (id: string) => {
     setDismissed((current) => {
@@ -53,6 +57,8 @@ export default function AdminNotificationCenter() {
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-label={`Admin notifications${visible.length ? `, ${visible.length} unread` : ""}`}
+        data-ripple
+        data-ripple-tone="cream"
         className="relative flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#1e1a18] bg-[#fbf5e9] text-espresso shadow-[0_2px_0_#1e1a18]"
       >
         <Bell size={16} />
@@ -65,18 +71,19 @@ export default function AdminNotificationCenter() {
             {visible.length > 0 && <button type="button" onClick={dismissAll} className="text-[10px] font-bold uppercase text-cola-red">Clear all</button>}
           </div>
           <div className="max-h-[60vh] space-y-2 overflow-y-auto">
-            {visible.map((item) => (
+            {visible.slice((page - 1) * perPage, page * perPage).map((item) => (
               <div key={item.id} className="flex items-start gap-2 rounded-xl border border-espresso/10 bg-white p-3">
                 <Link to={item.kind === "message" ? "/admin/messages" : "/admin/orders"} onClick={() => { dismiss(item.id); setOpen(false); }} className="min-w-0 flex-1">
                   <span className="block text-xs font-bold">{item.title}</span>
                   <span className="mt-0.5 block text-xs text-espresso/65">{item.detail}</span>
                   {item.createdAt && <time className="mt-1 block text-[10px] text-espresso/45">{new Date(item.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</time>}
                 </Link>
-                <button type="button" aria-label="Dismiss notification" onClick={() => dismiss(item.id)} className="shrink-0 rounded-full p-1 text-espresso/45 hover:bg-espresso/5 hover:text-espresso"><X size={14} /></button>
+                <button type="button" aria-label="Dismiss notification" data-ripple onClick={() => dismiss(item.id)} className="shrink-0 rounded-full p-1 text-espresso/45 hover:bg-espresso/5 hover:text-espresso"><X size={14} /></button>
               </div>
             ))}
             {visible.length === 0 && <p className="px-2 py-6 text-center text-sm text-espresso/55">You're all caught up.</p>}
           </div>
+          <Pagination currentPage={page} totalPages={totalPages} totalItems={visible.length} perPage={perPage} onPageChange={setPage} itemLabel="notifications" className="mt-2 border-espresso/10" />
           <button type="button" onClick={() => setOpen(false)} className="mt-2 flex w-full items-center justify-center gap-1 rounded-full bg-espresso px-3 py-2 text-xs font-semibold text-cream"><Check size={13} /> Done</button>
         </div>
       )}

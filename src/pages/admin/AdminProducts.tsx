@@ -5,6 +5,7 @@ import AdminNav from "../../components/AdminNav";
 import CharmIcon from "../../components/CharmIcon";
 import PhotosEditor, { newEntry, type PhotoEntry, type PhotoMode } from "../../components/admin/PhotosEditor";
 import ProductPageDetailsEditor from "../../components/admin/ProductPageDetailsEditor";
+import Pagination from "../../components/Pagination";
 import type { GalleryImage, Product, ProductVariant } from "../../data/products";
 import {
   createProduct,
@@ -127,6 +128,8 @@ function toInput(form: FormState): ProductInput {
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [page, setPage] = useState(1);
+  const perPage = 10;
   const [storefront, setStorefront] = useState<StorefrontSettings | null>(null);
   const [savingDetails, setSavingDetails] = useState(false);
   const [detailsSavedMsg, setDetailsSavedMsg] = useState(false);
@@ -175,16 +178,18 @@ export default function AdminProducts() {
   );
 
   const handleSaved = (saved: Product) => {
-    setProducts((prev) =>
-      prev.some((p) => p.id === saved.id)
-        ? prev.map((p) => (p.id === saved.id ? saved : p))
-        : [...prev, saved],
-    );
+    const isNew = !products.some((p) => p.id === saved.id);
+    setProducts((prev) => prev.some((p) => p.id === saved.id)
+      ? prev.map((p) => (p.id === saved.id ? saved : p))
+      : [...prev, saved]);
+    if (isNew) setPage(Math.max(1, Math.ceil((products.length + 1) / perPage)));
     setEditing(null);
   };
 
   const handleDeleted = (id: string) => {
+    const nextLength = products.filter((p) => p.id !== id).length;
     setProducts((prev) => prev.filter((p) => p.id !== id));
+    setPage((current) => Math.min(current, Math.max(1, Math.ceil(nextLength / perPage))));
     setEditing(null);
   };
 
@@ -285,7 +290,7 @@ export default function AdminProducts() {
             {error && <p className="text-cola-red text-sm mt-4">{error}</p>}
 
             <div className="flex flex-col gap-3 mt-5">
-              {products.map((product) => {
+              {products.slice((page - 1) * perPage, page * perPage).map((product) => {
                 const isDragging = draggedId === product.id;
                 const isDragOver = dragOverId === product.id && draggedId !== product.id;
                 const isCopied = copiedId === product.id;
@@ -369,6 +374,9 @@ export default function AdminProducts() {
                 <p className="text-espresso/50 text-sm">No products yet.</p>
               )}
             </div>
+            {!loading && !error && products.length > 0 && (
+              <Pagination currentPage={page} totalPages={Math.ceil(products.length / perPage)} totalItems={products.length} perPage={perPage} onPageChange={setPage} itemLabel="products" />
+            )}
           </div>
 
           {/* Static Product Page Details Section for Admin */}

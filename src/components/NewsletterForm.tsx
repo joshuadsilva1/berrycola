@@ -20,7 +20,7 @@ export default function NewsletterForm({ variant = "dark" }: { variant?: "dark" 
   if (status === "done") {
     return (
       <p className={variant === "dark" ? "text-cream/80 text-sm" : "text-espresso/70 text-sm"}>
-        You're on the list watch your inbox.
+        You're subscribed. We'll email you when we send a drop or update.
       </p>
     );
   }

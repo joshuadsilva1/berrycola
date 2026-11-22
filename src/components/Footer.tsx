@@ -46,6 +46,8 @@ export default function Footer() {
             <a
               href="https://www.instagram.com/berrycolastore/"
               aria-label="Instagram"
+              data-ripple
+              data-ripple-tone="cream"
               target="_blank"
               rel="noopener noreferrer"
               className="w-9 h-9 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 flex items-center justify-center text-espresso hover:text-cola-red transition-all"
@@ -55,6 +57,8 @@ export default function Footer() {
             <a
               href="https://in.pinterest.com/berrycolastore/"
               aria-label="Pinterest"
+              data-ripple
+              data-ripple-tone="cream"
               target="_blank"
               rel="noopener noreferrer"
               className="w-9 h-9 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 flex items-center justify-center text-espresso hover:text-cola-red transition-all"
@@ -64,6 +68,8 @@ export default function Footer() {
             <a
               href="mailto:berrycolastore@gmail.com"
               aria-label="Email BerryCola"
+              data-ripple
+              data-ripple-tone="cream"
               className="w-9 h-9 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 flex items-center justify-center text-espresso hover:text-cola-red transition-all"
             >
               <Mail size={16} />

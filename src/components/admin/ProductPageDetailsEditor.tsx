@@ -339,6 +339,8 @@ export default function ProductPageDetailsEditor() {
                 onClick={() => removeCustomItem(idx)}
                 className="w-8 h-8 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_2px_0_#1e1a18] active:translate-y-0.5 flex items-center justify-center text-espresso hover:text-cola-red shrink-0 cursor-pointer"
                 aria-label="Remove detail row"
+                data-ripple
+                data-ripple-tone="cream"
               >
                 <Trash2 size={13} />
               </button>

@@ -876,7 +876,7 @@ export default function Account() {
 
     {/* ACTION DOCK UNDERNEATH HANGING BADGE */}
       {/* Changed from z-30 to relative z-10 so the chains (z-15+) float above it */}
-      <div className="relative flex flex-wrap items-center justify-center gap-3 mt-4 z-10">
+      <div className="relative flex flex-wrap items-center justify-center gap-3 mt-20 z-30">
         <button
           type="button"
           onClick={() => {

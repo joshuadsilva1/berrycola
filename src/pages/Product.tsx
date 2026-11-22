@@ -184,6 +184,8 @@ function ProductDetail({ product }: { product: ProductType }) {
               onClick={handleShare}
               title={copiedLink ? "Link copied!" : "Share product link"}
               aria-label="Share product"
+              data-ripple
+              data-ripple-tone="cream"
               className="absolute top-5 right-5 z-20 w-10 h-10 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 flex items-center justify-center text-espresso hover:text-cola-red transition-all cursor-pointer"
             >
               {copiedLink ? <Check size={16} className="text-green-700" /> : <Share2 size={16} />}
@@ -284,6 +286,8 @@ function ProductDetail({ product }: { product: ProductType }) {
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
                   className="w-10 h-10 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 flex items-center justify-center text-espresso hover:text-cola-red transition-all cursor-pointer"
                   aria-label="Decrease quantity"
+                  data-ripple
+                  data-ripple-tone="cream"
                 >
                   <Minus size={14} />
                 </button>
@@ -293,6 +297,8 @@ function ProductDetail({ product }: { product: ProductType }) {
                   disabled={maxStock !== null && qty >= maxStock}
                   className="w-10 h-10 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 flex items-center justify-center text-espresso hover:text-cola-red transition-all disabled:opacity-40 cursor-pointer"
                   aria-label="Increase quantity"
+                  data-ripple
+                  data-ripple-tone="cream"
                 >
                   <Plus size={14} />
                 </button>

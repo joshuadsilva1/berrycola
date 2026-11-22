@@ -13,6 +13,7 @@ export default function WhatsAppButton() {
       className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-0.5 text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all"
       aria-label="Chat on WhatsApp"
       title="Chat on WhatsApp"
+      data-ripple
     >
       <svg
         width="24"

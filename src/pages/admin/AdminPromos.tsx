@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Tag, Percent, IndianRupee } from "lucide-react";
 import AdminNav from "../../components/AdminNav";
+import Pagination from "../../components/Pagination";
 import { fetchAdminPromos, createPromo, updatePromo, deletePromo, type PromoCode } from "../../lib/api";
 
 const inputClass = "w-full border border-espresso/15 rounded-xl px-3 py-2 text-sm bg-cream focus:outline-none focus:border-cola-red";
@@ -8,6 +9,10 @@ const inputClass = "w-full border border-espresso/15 rounded-xl px-3 py-2 text-s
 export default function AdminPromos() {
   const [promos, setPromos] = useState<PromoCode[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const perPage = 10;
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
   
   // New Promo Form State
   const [code, setCode] = useState("");
@@ -17,8 +22,15 @@ export default function AdminPromos() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    fetchAdminPromos().then(setPromos).finally(() => setLoading(false));
-  }, []);
+    let active = true;
+    setLoading(true);
+    fetchAdminPromos(page, perPage).then((result) => {
+      if (!active) return;
+      setPromos(result.items);
+      setTotal(result.total);
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [page]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +43,9 @@ export default function AdminPromos() {
         minOrderValue: minOrder ? Number(minOrder) : null,
         isActive: true,
       });
-      setPromos([newPromo, ...promos]);
+      setTotal((count) => count + 1);
+      if (page !== 1) setPage(1);
+      else setPromos((current) => [newPromo, ...current].slice(0, perPage));
       setCode("");
       setDiscountValue("");
       setMinOrder("");
@@ -44,13 +58,20 @@ export default function AdminPromos() {
 
   const toggleActive = async (promo: PromoCode) => {
     const updated = await updatePromo(promo.id, { isActive: !promo.isActive });
-    setPromos(promos.map(p => p.id === promo.id ? updated : p));
+    setPromos((current) => current.map(p => p.id === promo.id ? updated : p));
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm("Are you sure you want to delete this promo code?")) return;
     await deletePromo(id);
-    setPromos(promos.filter(p => p.id !== id));
+    setPromos((current) => current.filter(p => p.id !== id));
+    setTotal((count) => Math.max(0, count - 1));
+    if (promos.length === 1 && page > 1) setPage((current) => current - 1);
+    else {
+      const refreshed = await fetchAdminPromos(page, perPage);
+      setPromos(refreshed.items);
+      setTotal(refreshed.total);
+    }
   };
 
   return (
@@ -127,6 +148,7 @@ export default function AdminPromos() {
               </button>
             </div>
           ))}
+          {!loading && <Pagination currentPage={page} totalPages={totalPages} totalItems={total} perPage={perPage} onPageChange={setPage} itemLabel="promo codes" />}
         </div>
       </div>
     </div>

@@ -28,7 +28,7 @@ export default function OrderUpdateBanner({ announcementVisible = false }: { ann
               <span>{updates.length === 1 ? <>Order #{first.id.slice(0, 8)}: <span className="font-semibold">{first.latest}</span></> : <><span className="font-semibold">{updates.length} orders</span> have new updates</>}</span>
               <span className="hidden text-cream/70 sm:inline">View →</span>
             </Link>
-            <button type="button" onClick={() => setDismissed(true)} aria-label="Close notification" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-cream/70 hover:bg-white/10 hover:text-white"><X size={14} /></button>
+            <button type="button" onClick={() => setDismissed(true)} aria-label="Close notification" data-ripple className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-cream/70 hover:bg-white/10 hover:text-white"><X size={14} /></button>
           </div>
         </motion.div>
       )}

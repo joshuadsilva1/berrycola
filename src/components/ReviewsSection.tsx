@@ -12,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import Pagination from "./Pagination";
 import {
   createProductReview,
   deleteReview,
@@ -51,6 +52,12 @@ export default function ReviewsSection({
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const reviewsPerPage = 10;
+  const reviewPages = Math.max(1, Math.ceil(reviews.length / reviewsPerPage));
+  const visibleReviews = productId
+    ? reviews.slice((reviewsPage - 1) * reviewsPerPage, reviewsPage * reviewsPerPage)
+    : reviews.slice(0, 6);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -86,6 +93,7 @@ export default function ReviewsSection({
   };
 
   useEffect(() => {
+    setReviewsPage(1);
     loadReviews();
   }, [productId, firebaseUser]);
 
@@ -280,6 +288,7 @@ export default function ReviewsSection({
                                 : "bg-white text-espresso/40 hover:text-cola-red"
                             }`}
                             aria-label={`Rate ${star} out of 5 stars`}
+                            data-ripple
                           >
                             <Star size={17} fill={active ? "currentColor" : "none"} />
                           </button>
@@ -355,6 +364,7 @@ export default function ReviewsSection({
                             onClick={() => setImageUrl("")}
                             className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-[#1e1a18] text-white flex items-center justify-center"
                             aria-label="Remove photo"
+                            data-ripple
                           >
                             <X size={10} />
                           </button>
@@ -414,7 +424,7 @@ export default function ReviewsSection({
           </div>
         ) : (
           <div className="grid md:grid-cols-3 gap-6">
-            {reviews.slice(0, productId ? 12 : 6).map((rev) => {
+            {visibleReviews.map((rev) => {
               const dateLabel = rev.createdAt
                 ? new Date(rev.createdAt).toLocaleDateString("en-IN", {
                     day: "numeric",
@@ -511,6 +521,9 @@ export default function ReviewsSection({
             })}
           </div>
         )}
+        {productId && !loading && reviews.length > 0 && (
+          <Pagination currentPage={reviewsPage} totalPages={reviewPages} totalItems={reviews.length} perPage={reviewsPerPage} onPageChange={setReviewsPage} itemLabel="reviews" />
+        )}
       </div>
 
       {/* Photo Lightbox Modal */}
@@ -532,6 +545,8 @@ export default function ReviewsSection({
                 onClick={() => setLightboxImage(null)}
                 className="absolute -top-3 -right-3 w-9 h-9 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] flex items-center justify-center text-espresso hover:text-cola-red cursor-pointer"
                 aria-label="Close photo"
+                data-ripple
+                data-ripple-tone="cream"
               >
                 <X size={16} />
               </button>

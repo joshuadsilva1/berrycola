@@ -100,6 +100,8 @@ export default function ProductGallery({
             <button
               onClick={() => goTo(index - 1)}
               aria-label="Previous image"
+              data-ripple
+              data-ripple-tone="cream"
               className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-[calc(-50%+2px)] text-espresso flex items-center justify-center hover:text-cola-red transition-all"
             >
               <ChevronLeft size={18} />
@@ -107,6 +109,8 @@ export default function ProductGallery({
             <button
               onClick={() => goTo(index + 1)}
               aria-label="Next image"
+              data-ripple
+              data-ripple-tone="cream"
               className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-[#fbf5e9] border-2 border-[#1e1a18] shadow-[0_3px_0_#1e1a18] active:translate-y-[calc(-50%+2px)] text-espresso flex items-center justify-center hover:text-cola-red transition-all"
             >
               <ChevronRight size={18} />

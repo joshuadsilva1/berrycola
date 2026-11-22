@@ -334,6 +334,7 @@ export default function PhotosEditor({
                 <button
                   type="button"
                   aria-label="Move up"
+                  data-ripple
                   disabled={i === 0}
                   onClick={() => move(i, -1)}
                   className="w-8 h-8 flex items-center justify-center text-espresso/50 hover:text-espresso disabled:opacity-25"
@@ -343,6 +344,7 @@ export default function PhotosEditor({
                 <button
                   type="button"
                   aria-label="Move down"
+                  data-ripple
                   disabled={i === entries.length - 1}
                   onClick={() => move(i, 1)}
                   className="w-8 h-8 flex items-center justify-center text-espresso/50 hover:text-espresso disabled:opacity-25"
@@ -352,6 +354,7 @@ export default function PhotosEditor({
                 <button
                   type="button"
                   aria-label={`Remove ${noun}`}
+                  data-ripple
                   onClick={() => onEntries((list) => list.filter((e) => e.key !== entry.key))}
                   className="w-8 h-8 flex items-center justify-center text-espresso/50 hover:text-cola-red"
                 >

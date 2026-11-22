@@ -11,35 +11,48 @@ import {
 import OrderTimeline from "../../components/OrderTimeline";
 import { ORDER_STATUSES, STATUS_LABELS } from "../../lib/orderStatus";
 import AdminNav from "../../components/AdminNav";
+import Pagination from "../../components/Pagination";
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const load = (q?: string) => {
-    setLoading(true);
-    fetchAdminOrders(q ? { q } : undefined)
-      .then(setOrders)
-      .catch(() => setError("Couldn't load orders."))
-      .finally(() => setLoading(false));
-  };
-
+  const perPage = 10;
   useEffect(() => {
-    load();
-  }, []);
+    let active = true;
+    setLoading(true);
+    setError(null);
+    fetchAdminOrders({ q: appliedSearch || undefined, page, perPage })
+      .then((result) => {
+        if (!active) return;
+        setOrders(result.items);
+        setTotalOrders(result.total);
+        setTotalPages(result.totalPages);
+      })
+      .catch(() => { if (active) setError("Couldn't load orders."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [appliedSearch, page]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    load(search.trim() || undefined);
+    setPage(1);
+    setAppliedSearch(search.trim());
   };
 
   const replaceOrder = (updated: Order) =>
     setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
 
   const handleUpdate = async (id: string, payload: TrackingUpdate) => {
-    replaceOrder(await updateOrderTracking(id, payload));
+    const updated = await updateOrderTracking(id, payload);
+    replaceOrder(updated);
+    return updated;
   };
 
   const handleSync = async (id: string) => {
@@ -57,7 +70,7 @@ export default function AdminOrders() {
   return (
     <div className="min-h-screen px-5 sm:px-8 pt-28 pb-20 max-w-6xl mx-auto">
       <AdminNav />
-      <h1 className="font-display text-3xl text-espresso mb-6">Orders</h1>
+      <h1 className="font-display text-3xl text-espresso mb-6">Orders <span className="text-espresso/40 text-xl">{totalOrders}</span></h1>
 
       <form onSubmit={handleSearch} className="flex gap-2 mb-8 max-w-sm">
         <input
@@ -82,6 +95,7 @@ export default function AdminOrders() {
           <p className="text-espresso/50 text-sm">No orders found.</p>
         )}
       </div>
+      {!loading && <Pagination currentPage={page} totalPages={totalPages} totalItems={totalOrders} perPage={perPage} onPageChange={setPage} itemLabel="orders" />}
     </div>
   );
 }
@@ -94,7 +108,7 @@ function AdminOrderRow({
   onRetryRefund,
 }: {
   order: Order;
-  onUpdate: (id: string, payload: TrackingUpdate) => Promise<void>;
+  onUpdate: (id: string, payload: TrackingUpdate) => Promise<Order>;
   onSync: (id: string) => Promise<void>;
   onCreateShipment: (id: string) => Promise<void>;
   onRetryRefund: (id: string) => Promise<void>;
@@ -110,6 +124,7 @@ function AdminOrderRow({
   const [syncError, setSyncError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [shipmentError, setShipmentError] = useState<string | null>(null);
+  const [approvalMessage, setApprovalMessage] = useState<string | null>(null);
   const [refundError, setRefundError] = useState<string | null>(null);
   const [creatingShipment, setCreatingShipment] = useState(false);
   const [retryingRefund, setRetryingRefund] = useState(false);
@@ -147,7 +162,11 @@ function AdminOrderRow({
     setSaved(false);
     setSaveError(null);
     try {
-      await onUpdate(order.id, { status, trackingId, carrier, trackingUrl });
+      const updated = await onUpdate(order.id, { status, trackingId, carrier, trackingUrl });
+      setShipmentError(updated.shipmentError ?? null);
+      setApprovalMessage(status === "confirmed" && !updated.shipmentError && updated.trackingId
+        ? `Approved. Tracking ${updated.trackingId} is linked to the customer order.`
+        : null);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
@@ -257,9 +276,9 @@ function AdminOrderRow({
           onClick={handleSave}
           className="px-4 py-2 rounded-full bg-cola-red text-cream text-xs font-semibold hover:bg-cola-red-dark disabled:opacity-40 transition-colors"
         >
-          {saving ? "Saving…" : "Save"}
+          {saving ? "Saving…" : status === "confirmed" && order.status !== "confirmed" ? "Approve & create shipment" : "Save"}
         </button>
-        {saved && <span className="text-xs text-espresso/50">Saved, customer notified</span>}
+        {saved && <span className="text-xs text-espresso/50">Saved{status === "confirmed" && order.status !== "confirmed" ? "; approval email sent" : ""}</span>}
         {order.trackingId && (
           <button
             onClick={handleSync}
@@ -279,10 +298,12 @@ function AdminOrderRow({
         )}
       </div>
       {saveError && <p role="alert" className="text-cola-red text-xs mt-2">{saveError}</p>}
+      {approvalMessage && <p role="status" className="text-emerald-800 text-xs mt-2">{approvalMessage}</p>}
+      {shipmentError && <p role="alert" className="text-amber-800 text-xs mt-2">Order approved and email sent, but tracking is not linked: {shipmentError}</p>}
       {status === "cancelled" && order.paymentStatus === "paid" && order.refundStatus !== "pending" && order.refundStatus !== "processed" && (
         <p className="mt-3 text-xs font-semibold text-amber-800">Saving as Cancelled requests a full Razorpay refund. The cancellation is saved only after Razorpay accepts the request.</p>
       )}
-      {order.paymentStatus === "paid" && !order.trackingId && order.status !== "cancelled" && (
+      {order.paymentStatus === "paid" && !order.trackingId && order.status !== "cancelled" && order.status !== "pending" && !import.meta.env.VITE_RAZORPAY_KEY_ID?.startsWith("rzp_test_") && (
         <div className="mt-4 border-t border-espresso/10 pt-4">
           <button
             type="button"

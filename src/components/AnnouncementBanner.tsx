@@ -9,7 +9,7 @@ export default function AnnouncementBanner({ visible, messages }: AnnouncementBa
 
   return (
     <div
-      className="announcement-banner fixed inset-x-0 top-0 z-[60] h-8 overflow-hidden bg-cola-red text-white"
+      className="announcement-banner fixed inset-x-0 top-0 z-40 h-8 overflow-hidden bg-cola-red text-white"
       role="region"
       aria-label="Store announcement"
     >
